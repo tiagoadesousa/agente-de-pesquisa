@@ -80,7 +80,6 @@ def get_ai_search_strategies(research_question, api_key):
         return json.loads(cleaned_response)
     except Exception as e: return [{'query': research_question, 'rationale': 'Falha na IA.', 'topic': 'Busca Direta'}]
 
-# ... (todas as outras funções permanecem aqui, sem alterações) ...
 def get_ai_summary(abstract, api_key):
     if not abstract or "resumo não disponível" in abstract.lower(): return "Não foi possível gerar o resumo."
     print("Gerando resumo analítico...")
@@ -164,30 +163,80 @@ def format_abnt(article):
 # --- ROTAS DA API ---
 @app.route('/api/search', methods=['POST'])
 def handle_search():
-    # ... (código da rota /api/search sem alterações) ...
-    return jsonify([])
+    data = request.json; min_year = int(data.get('minYear', 2020)); min_citations = int(data.get('minCitations', 10))
+    strategies = get_ai_search_strategies(data.get('queryText'), GEMINI_API_KEY) if data.get('searchType') == 'ia' else [{'query': data.get('queryText'), 'rationale': 'Busca direta.', 'topic': 'Busca Direta'}]
+    if not strategies: return jsonify({"error": "Não foi possível gerar estratégias."}), 500
+    
+    service = get_drive_service()
+    folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
+    saved_articles = load_saved_articles_from_drive(service, folder_id)
+    saved_ids = {a['id'] for a in saved_articles}
+    
+    all_found_articles = []; tasks = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for strategy in strategies:
+            query, rationale, topic = strategy.get('query'), strategy.get('rationale'), strategy.get('topic')
+            if not query: continue
+            print(f"Agendando busca para: {query} (Tópico: {topic})")
+            tasks.append(executor.submit(search_semantic_scholar, query, min_year, min_citations))
+            tasks.append(executor.submit(search_crossref, query, min_year))
+        for future in tasks:
+            try:
+                results = future.result()
+                for r in results: r['topic'] = rationale
+                all_found_articles.extend(results)
+            except Exception as e:
+                print(f"Uma tarefa de busca falhou: {e}")
+    return jsonify(deduplicate_articles(all_found_articles, saved_ids))
 
 @app.route('/api/generate', methods=['POST'])
 def handle_generate():
-    # ... (código da rota /api/generate sem alterações) ...
-    return jsonify({"status": "success"})
+    articles_to_save = request.json.get('articles', [])
+    try:
+        service = get_drive_service(); folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
+        today = datetime.date.today().strftime("%Y-%m-%d"); saved_articles = load_saved_articles_from_drive(service, folder_id)
+        saved_ids = {a['id'] for a in saved_articles}
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_summaries = {executor.submit(get_ai_summary, article.get('abstract'), GEMINI_API_KEY): article for article in articles_to_save if article.get('id') not in saved_ids}
+            for future in future_summaries:
+                article = future_summaries[future]; ai_summary = future.result()
+                author_part = sanitize_filename(article.get('authors', ['N/A'])[0].split(' ')[-1] if article.get('authors') else 'Autor')
+                filename = f"{author_part}_{article.get('year', 'SD')}_{sanitize_filename(article.get('title'))[:30]}.md"
+                file_content = f"""# {article.get('title', 'N/A')}\n- Autores: {', '.join(article.get('authors', []))}\n- Ano: {article.get('year')}\n- Citações: {article.get('citations')}\n- Tópico: {article.get('topic')}\n- Fonte: {article.get('source')}\n- Link: <{article.get('url', '#')}>\n- Data da Seleção: {today}\n\n---\n\n## Resumo Analítico (IA)\n> {ai_summary}\n\n---\n\n## Resumo Original\n> {article.get('abstract') or 'N/A'}\n\n---\n\n## Minhas Anotações\n<!-- Adicione suas notas aqui -->"""
+                upload_text_file(service, folder_id, filename, file_content)
+                article.update({'read': False, 'readDate': None, 'specificObjective': '', 'selectionDate': today, 'summary': ai_summary})
+                saved_articles.append(article)
+        save_articles_to_drive(service, folder_id, saved_articles)
+        return jsonify({"status": "success", "message": f"{len(future_summaries)} fichamentos salvos!"})
+    except Exception as e: print(f"Erro em /api/generate: {e}"); return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/manage/load', methods=['GET'])
 def handle_load_saved():
-    # ... (código da rota /api/manage/load sem alterações) ...
-    return jsonify([])
+    try:
+        service = get_drive_service(); folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
+        return jsonify(load_saved_articles_from_drive(service, folder_id)), 200
+    except Exception as e: print(f"Erro em /api/manage/load: {e}"); return jsonify([]), 200
 
 @app.route('/api/manage/update', methods=['POST'])
 def handle_update_saved():
-    # ... (código da rota /api/manage/update sem alterações) ...
-    return jsonify({"status": "success"})
+    try:
+        service = get_drive_service(); folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
+        save_articles_to_drive(service, folder_id, request.json.get('articles'))
+        return jsonify({"status": "success"})
+    except Exception as e: print(f"Erro em /api/manage/update: {e}"); return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/build-framework', methods=['GET'])
 def handle_build_framework():
-    # ... (código da rota /api/build-framework sem alterações) ...
-    return jsonify({})
+    try:
+        service = get_drive_service(); folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
+        saved_articles = load_saved_articles_from_drive(service, folder_id)
+        relevant_articles = [art for art in saved_articles if art.get('read') and art.get('specificObjective')]
+        framework = defaultdict(list)
+        for article in relevant_articles:
+            objective = article['specificObjective']; framework[objective].append(format_abnt(article))
+        return jsonify(framework), 200
+    except Exception as e: print(f"Erro em /api/build-framework: {e}"); return jsonify({"error": str(e)}), 500
     
-# --- NOVA ROTA PARA SERVIR A INTERFACE ---
 @app.route('/')
 def serve_index():
     return send_from_directory('static', 'index.html')
