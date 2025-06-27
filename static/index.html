@@ -24,7 +24,7 @@
     </style>
 </head>
 <body class="text-gray-800">
-    <div id="app" class="p-4 sm:p-8 min-h-screen flex items-center justify-center">
+    <div id="app" class="p-4 sm:p-8 min-h-screen">
         <!-- Telas -->
         <div id="dashboardScreen" class="screen w-full max-w-2xl mx-auto text-center">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-700 mb-2">Agente de Pesquisa Acadêmica</h1>
@@ -46,7 +46,7 @@
         </div>
 
         <!-- Modals -->
-        <div id="searchModal" class="modal-container fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 invisible"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">Configurar Nova Busca</h2><button data-modal-target="search" class="close-modal text-gray-400"><span class="material-icons">close</span></button></div><div><div id="search-inputs-container"><div class="mb-6"><label class="block text-md font-medium mb-2">Tipo de Busca</label><div class="flex space-x-4"><label class="flex items-center p-3 border rounded-lg flex-1 cursor-pointer"><input type="radio" name="searchType" value="ia" class="h-4 w-4 text-blue-600" checked> <span class="ml-3">Busca Estratégica (IA)</span></label><label class="flex items-center p-3 border rounded-lg flex-1 cursor-pointer"><input type="radio" name="searchType" value="direct" class="h-4 w-4 text-blue-600"> <span class="ml-3">Busca Direta</span></label></div></div><div class="mb-6"><textarea id="mainSearchInput" rows="3" class="w-full p-3 border rounded-lg"></textarea></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"><div><label class="block text-sm font-medium mb-1">Ano a partir de</label><input type="number" id="minYear" class="w-full p-3 border rounded-lg" value="2020"></div><div><label class="block text-sm font-medium mb-1">Mínimo de citações</label><input type="number" id="minCitations" class="w-full p-3 border rounded-lg" value="10"></div></div><button id="startSearchButton" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg flex items-center justify-center text-lg"><span class="material-icons mr-2">search</span>Buscar Artigos</button></div><div class="mt-4 text-center text-sm text-gray-500">ou</div><div id="import-inputs-container" class="mt-4"><label for="bibFileInput" class="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center cursor-pointer"><span class="material-icons mr-2">file_upload</span>Importar Ficheiro .bib</label><input type="file" id="bibFileInput" class="hidden" accept=".bib"><p id="fileNameDisplay" class="text-sm text-center text-gray-500 mt-2"></p></div></div></div></div>
+        <div id="searchModal" class="modal-container fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 invisible"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">Configurar Nova Busca</h2><button data-modal-target="search" class="close-modal text-gray-400"><span class="material-icons">close</span></button></div><div><div id="search-inputs-container"><div class="mb-6"><label class="block text-md font-medium mb-2">Tipo de Busca</label><div class="flex space-x-4"><label class="flex items-center p-3 border rounded-lg flex-1 cursor-pointer"><input type="radio" name="searchType" value="ia" class="h-4 w-4 text-blue-600" checked> <span class="ml-3">Busca Estratégica (IA)</span></label><label class="flex items-center p-3 border rounded-lg flex-1 cursor-pointer"><input type="radio" name="searchType" value="direct" class="h-4 w-4 text-blue-600"> <span class="ml-3">Busca Direta</span></label></div></div><div class="mb-6"><textarea id="mainSearchInput" rows="3" class="w-full p-3 border rounded-lg"></textarea></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"><div><label class="block text-sm font-medium mb-1">Ano a partir de</label><input type="number" id="minYear" class="w-full p-3 border rounded-lg" value="2020"></div><div><label class="block text-sm font-medium mb-1">Mínimo de citações</label><input type="number" id="minCitations" class="w-full p-3 border rounded-lg" value="10"></div></div><button id="startSearchButton" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg flex items-center justify-center text-lg"><span class="material-icons mr-2">search</span>Buscar Artigos</button></div></div></div></div>
         <div id="addByLinkModal" class="modal-container fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 invisible"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-8"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">Adicionar Artigo por Link</h2><button data-modal-target="addByLink" class="close-modal text-gray-400"><span class="material-icons">close</span></button></div><div><div class="mb-6"><label for="urlInput" class="block text-md font-medium mb-2">URL do Artigo (ResearchGate)</label><textarea id="urlInput" rows="3" class="w-full p-3 border rounded-lg" placeholder="Cole aqui o link do artigo do ResearchGate..."></textarea></div><button id="addByLinkActionButton" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg flex items-center justify-center text-lg"><span class="material-icons mr-2">add_circle</span>Adicionar Artigo</button></div></div></div>
         
         <div id="summaryModal" class="modal-container fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 invisible"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">Resumo Analítico (IA)</h3><button data-modal-target="summary" class="close-modal text-gray-400"><span class="material-icons">close</span></button></div><div id="summaryModalContent" class="prose"></div></div></div>
@@ -70,9 +70,7 @@
             articlesList: document.getElementById('articlesList'), selectAllCheckbox: document.getElementById('selectAllCheckbox'), generateButton: document.getElementById('generateButton'), sortOrder: document.getElementById('sortOrder'), loadMoreButton: document.getElementById('loadMoreButton'), resultsCounter: document.getElementById('resultsCounter'), mainSearchInput: document.getElementById('mainSearchInput'), searchTypeRadios: document.querySelectorAll('input[name="searchType"]'),
             buildFrameworkButton: document.getElementById('buildFrameworkButton'), frameworkContent: document.getElementById('frameworkContent'), copyFrameworkButton: document.getElementById('copyFrameworkButton'),
             addByLinkCard: document.getElementById('addByLinkCard'), addByLinkActionButton: document.getElementById('addByLinkActionButton'), urlInput: document.getElementById('urlInput'),
-            searchQueryDisplay: document.getElementById('searchQueryDisplay'),
-            bibFileInput: document.getElementById('bibFileInput'), fileNameDisplay: document.getElementById('fileNameDisplay'),
-            importWosButton: document.getElementById('importWosButton')
+            searchQueryDisplay: document.getElementById('searchQueryDisplay')
         };
         const showScreen = name => { Object.values(dom.screens).forEach(s => s.classList.add('hidden-screen')); dom.screens[name].classList.remove('hidden-screen');};
         const openModal = name => { dom.modals[name].classList.remove('invisible', 'opacity-0'); dom.modals[name].querySelector('div > div').classList.remove('scale-95'); };
@@ -81,9 +79,8 @@
         async function apiCall(endpoint, method = 'GET', body = null) {
             try {
                 dom.screens.loading.classList.remove('hidden-screen');
-                const options = { method };
-                if (body instanceof FormData) { options.body = body; } 
-                else if (body) { options.headers = { 'Content-Type': 'application/json' }; options.body = JSON.stringify(body); }
+                const options = { method, headers: { 'Content-Type': 'application/json' } };
+                if (body) options.body = JSON.stringify(body);
                 const response = await fetch(`${API_URL}${endpoint}`, options);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return await response.json();
@@ -123,22 +120,7 @@
         const handleFrameworkClick = (e) => { const copyButton = e.target.closest('.copy-ref'); if (copyButton) { const textToCopy = copyButton.parentElement.querySelector('span').innerText; navigator.clipboard.writeText(textToCopy).then(() => alert('Referência copiada!'), () => alert('Falha ao copiar.')); } else if (e.target.tagName !== 'SUMMARY') { e.preventDefault(); } };
         const updatePlaceholder = () => { dom.mainSearchInput.placeholder = document.querySelector('input[name="searchType"]:checked').value === 'ia' ? "Digite sua pergunta de pesquisa ou objetivo..." : "Digite os termos de busca (ex: 'user experience' AND 'SME')..."; };
         const handleAddByLink = async () => { const url = dom.urlInput.value; if (!url) { alert('Por favor, insira uma URL.'); return; } closeModal('addByLink'); const result = await apiCall('/api/add-by-url', 'POST', { url }); if (result) { alert(result.message); if (result.status === 'success') { loadManageScreen(); } else { showScreen('dashboard'); } } };
-        const handleBibFileSelect = async (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-            const formData = new FormData();
-            formData.append('file', file);
-            closeModal('search');
-            const articles = await apiCall('/api/import-bib', 'POST', formData);
-            if (articles) {
-                currentArticles = articles;
-                displayedCount = articlesPerPage;
-                dom.searchQueryDisplay.textContent = `Artigos importados de ${file.name}`;
-                renderSearchResults();
-                showScreen('results');
-            }
-        };
-
+        
         // EVENT LISTENERS
         dom.newSearchCard.addEventListener('click', () => openModal('search'));
         dom.manageCard.addEventListener('click', loadManageScreen);
@@ -162,8 +144,6 @@
         dom.frameworkContent.addEventListener('click', handleFrameworkClick);
         dom.addByLinkCard.addEventListener('click', () => openModal('addByLink'));
         dom.addByLinkActionButton.addEventListener('click', handleAddByLink);
-        document.getElementById('importWosButton').addEventListener('click', () => dom.bibFileInput.click());
-        dom.bibFileInput.addEventListener('change', handleBibFileSelect);
         
         showScreen('dashboard');
         updatePlaceholder();
