@@ -31,7 +31,7 @@ CORS(app)
 
 # --- CONFIGURAÇÕES GLOBAIS ---
 # Estas variáveis serão agora lidas do ambiente do servidor (mais seguro)
-GEMINI_API_KEY = os.environ.get('AIzaSyARsGIgQfgYhcRkyVoEOyStKueDY8NRv3I')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 DRIVE_FOLDER_NAME = "Fichamentos_Mestrado"
 SAVED_ARTICLES_FILENAME = "saved_articles.json"
 CROSSREF_MAILTO = "tiago.adesousa@gmail.com"
