@@ -37,29 +37,46 @@ DRIVE_FOLDER_NAME = "Fichamentos_Mestrado"
 SAVED_ARTICLES_FILENAME = "saved_articles.json"
 CROSSREF_MAILTO = "seu.email@dominio.com"
 SCOPES = ['https://www.googleapis.com/auth/drive']
+TOKEN_FILE = 'token.json' # Usado apenas para execução local
 
 # --- FUNÇÕES COMPLETAS DO AGENTE ---
 
 def get_drive_service():
     creds = None
+    # Lógica para o ambiente do Render (produção)
     if GOOGLE_TOKEN_JSON and GOOGLE_CREDENTIALS_JSON:
         try:
             creds_json = json.loads(GOOGLE_TOKEN_JSON)
             creds = Credentials.from_authorized_user_info(creds_json, SCOPES)
         except json.JSONDecodeError:
             raise Exception("A variável de ambiente GOOGLE_TOKEN_JSON não é um JSON válido.")
-    
+    # Lógica para o ambiente local (desenvolvimento)
+    elif os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             try:
-                creds_info = json.loads(GOOGLE_CREDENTIALS_JSON)
-                creds.refresh(Request(creds_info))
+                # Tenta atualizar o token
+                if GOOGLE_CREDENTIALS_JSON:
+                     creds_info = json.loads(GOOGLE_CREDENTIALS_JSON)
+                     creds.refresh(Request(creds_info))
+                else: # Fallback para o ficheiro local
+                     creds.refresh(Request())
                 print("Aviso: O token de acesso foi atualizado.")
+                # Salva o novo token para uso futuro
+                with open('token.json', 'w') as token:
+                    token.write(creds.to_json())
             except Exception as e:
                  raise Exception(f"O token de acesso expirou e não pôde ser atualizado. Por favor, gere um novo token.json localmente e atualize a variável de ambiente GOOGLE_TOKEN_JSON no Render. Erro: {e}")
         else:
-            raise Exception("As credenciais do Google (token ou credentials) não estão configuradas corretamente no ambiente do Render.")
-
+            # Inicia o fluxo de autorização se não houver token válido
+            if not os.path.exists('credentials.json'):
+                raise Exception("Arquivo 'credentials.json' não encontrado para iniciar o fluxo de autorização.")
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0) 
+            with open('token.json', 'w') as token:
+                token.write(creds.to_json())
     return build('drive', 'v3', credentials=creds)
 
 
@@ -88,7 +105,7 @@ def get_ai_summary(abstract, api_key):
         model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = f"""Analise o resumo e escreva um parágrafo em português (100-150 palavras) destacando: 1. Problema; 2. Metodologia; 3. Conclusão. Resumo: --- {abstract} ---"""
         response = model.generate_content(prompt); time.sleep(1); return response.text.strip()
-    except Exception as e: return "Ocorreu um erro ao gerar o resumo."
+    except Exception as e: return "Ocorreu um erro ao tentar gerar o resumo analítico."
 def search_semantic_scholar(query, min_year, min_citations):
     try:
         url = "https://api.semanticscholar.org/graph/v1/paper/search"; params = {'query': query, 'limit': 20, 'fields': 'paperId,title,authors,year,abstract,url,citationCount'}
