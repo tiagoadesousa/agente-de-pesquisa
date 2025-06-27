@@ -1,7 +1,7 @@
 # --- INSTALAÇÕES NECESSÁRIAS ---
-# O Render usará o ficheiro requirements.txt para instalar tudo isto.
+# Rode no seu terminal: pip install Flask Flask-Cors google-generativeai requests google-api-python-client google-auth-httplib2 google-auth-oauthlib beautifulsoup4 bibtexparser
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import datetime
 import re
@@ -11,7 +11,7 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
-import bibtexparser
+import bibtexparser # Para importação
 
 # --- Importações de Lógica ---
 import google.generativeai as genai
@@ -22,49 +22,42 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseUpload
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # Para ler HTML
 
 # --- INICIALIZAÇÃO DO SERVIDOR FLASK ---
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURAÇÕES GLOBAIS ---
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GOOGLE_CREDENTIALS_JSON = os.environ.get('GOOGLE_CREDENTIALS_JSON')
-GOOGLE_TOKEN_JSON = os.environ.get('GOOGLE_TOKEN_JSON')
-
+GEMINI_API_KEY = 'SUA_CHAVE_API_GEMINI_AQUI'
 DRIVE_FOLDER_NAME = "Fichamentos_Mestrado"
 SAVED_ARTICLES_FILENAME = "saved_articles.json"
 CROSSREF_MAILTO = "seu.email@dominio.com"
 SCOPES = ['https://www.googleapis.com/auth/drive']
+TOKEN_FILE = 'token.json'
+CREDENTIALS_FILE = 'credentials.json'
 
 # --- FUNÇÕES COMPLETAS DO AGENTE ---
 
 def get_drive_service():
     creds = None
-    if GOOGLE_TOKEN_JSON and GOOGLE_CREDENTIALS_JSON:
-        try:
-            creds_json = json.loads(GOOGLE_TOKEN_JSON)
-            creds = Credentials.from_authorized_user_info(creds_json, SCOPES)
-        except json.JSONDecodeError:
-            raise Exception("A variável de ambiente GOOGLE_TOKEN_JSON não é um JSON válido.")
-    
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            try:
-                creds_info = json.loads(GOOGLE_CREDENTIALS_JSON)
-                creds.refresh(Request(creds_info))
-                print("Aviso: O token de acesso foi atualizado.")
-            except Exception as e:
-                 raise Exception(f"O token de acesso expirou e não pôde ser atualizado. Por favor, gere um novo token.json localmente e atualize a variável de ambiente GOOGLE_TOKEN_JSON no Render. Erro: {e}")
+            creds.refresh(Request())
         else:
-            raise Exception("As credenciais do Google (token ou credentials) não estão configuradas corretamente no ambiente do Render.")
-
+            if not os.path.exists(CREDENTIALS_FILE):
+                raise Exception(f"Arquivo '{CREDENTIALS_FILE}' não encontrado.")
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
+            creds = flow.run_local_server(port=0) 
+        with open(TOKEN_FILE, 'w') as token:
+            token.write(creds.to_json())
     return build('drive', 'v3', credentials=creds)
 
-
 def get_ai_search_strategies(research_question, api_key):
-    if not api_key: return [{'query': research_question, 'rationale': 'Busca direta.', 'topic': 'Busca Direta'}]
+    if not api_key or "SUA_CHAVE" in api_key:
+        return [{'query': research_question, 'rationale': 'Busca direta.', 'topic': 'Busca Direta'}]
     try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
@@ -77,8 +70,13 @@ def get_ai_search_strategies(research_question, api_key):
         """
         response = model.generate_content(prompt)
         cleaned_response = response.text.strip().replace('```json', '').replace('```', '')
-        return json.loads(cleaned_response)
-    except Exception as e: return [{'query': research_question, 'rationale': 'Falha na IA.', 'topic': 'Busca Direta'}]
+        decoded_data = json.loads(cleaned_response)
+        if not isinstance(decoded_data, list):
+            return [{'query': research_question, 'rationale': 'Falha na IA, busca direta.', 'topic': 'Busca Direta'}]
+        return decoded_data
+    except Exception as e:
+        print(f"Erro na API do Gemini: {e}")
+        return [{'query': research_question, 'rationale': 'Falha na IA, busca direta.', 'topic': 'Busca Direta'}]
 
 def get_ai_summary(abstract, api_key):
     if not abstract or "resumo não disponível" in abstract.lower(): return "Não foi possível gerar o resumo."
@@ -89,6 +87,7 @@ def get_ai_summary(abstract, api_key):
         prompt = f"""Analise o resumo e escreva um parágrafo em português (100-150 palavras) destacando: 1. Problema; 2. Metodologia; 3. Conclusão. Resumo: --- {abstract} ---"""
         response = model.generate_content(prompt); time.sleep(1); return response.text.strip()
     except Exception as e: return "Ocorreu um erro ao gerar o resumo."
+
 def search_semantic_scholar(query, min_year, min_citations):
     try:
         url = "https://api.semanticscholar.org/graph/v1/paper/search"; params = {'query': query, 'limit': 20, 'fields': 'paperId,title,authors,year,abstract,url,citationCount'}
@@ -100,6 +99,7 @@ def search_semantic_scholar(query, min_year, min_citations):
         if hasattr(e, 'response') and e.response is not None and e.response.status_code == 429: print("Aviso: Limite de requisições do Semantic Scholar atingido.")
         else: print(f"Erro na busca do Semantic Scholar: {e}")
         return []
+
 def search_crossref(query, min_year):
     try:
         url = "https://api.crossref.org/works"; params = {'query.bibliographic': query, 'rows': 20, 'filter': f'from-pub-date:{min_year}-01-01', 'mailto': CROSSREF_MAILTO}
@@ -110,6 +110,31 @@ def search_crossref(query, min_year):
                 articles.append({'id': item.get('DOI'), 'title': item.get('title', ['N/A'])[0], 'authors': [f"{a.get('given', '')} {a.get('family', '')}".strip() for a in item.get('author', [])], 'year': year_part, 'source': 'CrossRef', 'citations': item.get('is-referenced-by-count', 0), 'url': item.get('URL'), 'abstract': 'Resumo não disponível no CrossRef.'})
         return articles
     except Exception as e: print(f"Erro na busca do CrossRef: {e}"); return []
+        
+def scrape_researchgate_metadata(url):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        title = soup.find('h1').text.strip() if soup.find('h1') else 'Título não encontrado'
+        authors_div = soup.find('div', class_='research-detail-header-section__authors')
+        authors = [a.text for a in authors_div.find_all('a')] if authors_div else []
+        abstract_div = soup.find('div', class_='research-detail-middle-section__abstract')
+        abstract = abstract_div.find('div').text.strip() if abstract_div else 'Resumo não encontrado.'
+        date_div = soup.find('div', string='Date of Publication')
+        year = int(date_div.find_next_sibling('div').text.split(', ')[-1]) if date_div and date_div.find_next_sibling('div') else datetime.datetime.now().year
+        article_id = "rg-" + url.split('/')[-1]
+
+        return {
+            'id': article_id, 'title': title, 'authors': authors, 'year': year, 'source': 'ResearchGate (Manual)',
+            'citations': 0, 'url': url, 'abstract': abstract, 'topic': 'Adicionado Manualmente'
+        }
+    except Exception as e:
+        print(f"Erro ao ler URL do ResearchGate: {e}")
+        return None
+
 def deduplicate_articles(articles, saved_articles_ids=None):
     if saved_articles_ids is None: saved_articles_ids = set()
     seen = set()
@@ -121,6 +146,7 @@ def deduplicate_articles(articles, saved_articles_ids=None):
             unique_articles.append(article)
             seen.add(identifier)
     return unique_articles
+
 def sanitize_filename(text): return re.sub(r'[\\/*?:"<>|]', "", text or '').strip()
 def get_or_create_folder(service, folder_name):
     query = f"mimeType='application/vnd.google-apps.folder' and name='{folder_name}' and trashed=false"; response = service.files().list(q=query, fields='files(id)').execute()
@@ -142,6 +168,7 @@ def load_saved_articles_from_drive(service, folder_id):
     except json.JSONDecodeError: return []
 def save_articles_to_drive(service, folder_id, articles):
     upload_text_file(service, folder_id, SAVED_ARTICLES_FILENAME, json.dumps(articles, indent=2))
+
 def format_abnt(article):
     authors = article.get('authors', [])
     if not authors: author_str = "AUTOR DESCONHECIDO"
@@ -159,19 +186,15 @@ def format_abnt(article):
     else: access_date_str = "Data de acesso não registrada."
     return f"{author_str}. {title}. {publication_info}, {year}. Disponível em: <{url}>. {access_date_str}"
 
-
 # --- ROTAS DA API ---
+
 @app.route('/api/search', methods=['POST'])
 def handle_search():
     data = request.json; min_year = int(data.get('minYear', 2020)); min_citations = int(data.get('minCitations', 10))
     strategies = get_ai_search_strategies(data.get('queryText'), GEMINI_API_KEY) if data.get('searchType') == 'ia' else [{'query': data.get('queryText'), 'rationale': 'Busca direta.', 'topic': 'Busca Direta'}]
     if not strategies: return jsonify({"error": "Não foi possível gerar estratégias."}), 500
-    
-    service = get_drive_service()
-    folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
-    saved_articles = load_saved_articles_from_drive(service, folder_id)
-    saved_ids = {a['id'] for a in saved_articles}
-    
+    service = get_drive_service(); folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
+    saved_articles = load_saved_articles_from_drive(service, folder_id); saved_ids = {a['id'] for a in saved_articles}
     all_found_articles = []; tasks = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         for strategy in strategies:
@@ -188,6 +211,66 @@ def handle_search():
             except Exception as e:
                 print(f"Uma tarefa de busca falhou: {e}")
     return jsonify(deduplicate_articles(all_found_articles, saved_ids))
+
+@app.route('/api/import-bib', methods=['POST'])
+def handle_bib_import():
+    if 'file' not in request.files: return jsonify({"error": "Nenhum ficheiro enviado."}), 400
+    file = request.files['file']
+    if file.filename == '': return jsonify({"error": "Nenhum ficheiro selecionado."}), 400
+    
+    try:
+        content = file.read().decode('utf-8')
+        bib_database = bibtexparser.loads(content)
+        articles = []
+        for entry in bib_database.entries:
+            authors = [name.strip() for name in entry.get('author', '').split(' and ')]
+            articles.append({
+                'id': entry.get('doi') or entry.get('ID'),
+                'title': entry.get('title', 'N/A').replace('{', '').replace('}', ''),
+                'authors': authors, 'year': int(entry.get('year', 0)),
+                'source': f"Importado ({entry.get('journal', 'N/A')})", 'citations': 0, 
+                'url': entry.get('url') or f"https://doi.org/{entry.get('doi')}" if entry.get('doi') else '#',
+                'abstract': entry.get('abstract', 'Resumo não disponível no ficheiro BibTeX.'),
+                'topic': 'Importado'
+            })
+        
+        service = get_drive_service(); folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
+        saved_articles = load_saved_articles_from_drive(service, folder_id); saved_ids = {a['id'] for a in saved_articles}
+        
+        return jsonify(deduplicate_articles(articles, saved_ids))
+    except Exception as e:
+        print(f"Erro ao processar ficheiro BibTeX: {e}")
+        return jsonify({"error": "O ficheiro enviado não é um BibTeX válido."}), 500
+
+@app.route('/api/add-by-url', methods=['POST'])
+def handle_add_by_url():
+    url = request.json.get('url')
+    if not url: return jsonify({"error": "URL não fornecida."}), 400
+    if "researchgate.net" in url:
+        article_data = scrape_researchgate_metadata(url)
+    else:
+        return jsonify({"error": "Atualmente, apenas links do ResearchGate são suportados."}), 400
+    if not article_data: return jsonify({"error": "Não foi possível extrair os dados da URL."}), 500
+    try:
+        service = get_drive_service(); folder_id = get_or_create_folder(service, DRIVE_FOLDER_NAME)
+        today = datetime.date.today().strftime("%Y-%m-%d"); saved_articles = load_saved_articles_from_drive(service, folder_id)
+        saved_ids = {a['id'] for a in saved_articles}
+        if article_data['id'] in saved_ids:
+            return jsonify({"status": "info", "message": "Este artigo já existe no seu fichamento."})
+        
+        ai_summary = get_ai_summary(article_data.get('abstract'), GEMINI_API_KEY)
+        author_part = sanitize_filename(article_data.get('authors', ['N/A'])[0].split(' ')[-1] if article_data.get('authors') else 'Autor')
+        filename = f"{author_part}_{article_data.get('year', 'SD')}_{sanitize_filename(article_data.get('title'))[:30]}.md"
+        file_content = f"""# {article_data.get('title', 'N/A')}\n- Autores: {', '.join(article_data.get('authors', []))}\n- Ano: {article_data.get('year')}\n- Citações: {article_data.get('citations')}\n- Tópico: {article_data.get('topic')}\n- Fonte: {article_data.get('source')}\n- Link: <{article_data.get('url', '#')}>\n- Data da Seleção: {today}\n\n---\n\n## Resumo Analítico (IA)\n> {ai_summary}\n\n---\n\n## Resumo Original\n> {article_data.get('abstract') or 'N/A'}\n\n---\n\n## Minhas Anotações\n<!-- Adicione suas notas aqui -->"""
+        upload_text_file(service, folder_id, filename, file_content)
+        
+        article_data.update({'read': False, 'readDate': None, 'specificObjective': '', 'selectionDate': today, 'summary': ai_summary})
+        saved_articles.append(article_data)
+        save_articles_to_drive(service, folder_id, saved_articles)
+        return jsonify({"status": "success", "message": f"Artigo '{article_data['title'][:30]}...' adicionado com sucesso!"})
+    except Exception as e:
+        print(f"Erro em /api/add-by-url: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/generate', methods=['POST'])
 def handle_generate():
@@ -236,13 +319,9 @@ def handle_build_framework():
             objective = article['specificObjective']; framework[objective].append(format_abnt(article))
         return jsonify(framework), 200
     except Exception as e: print(f"Erro em /api/build-framework: {e}"); return jsonify({"error": str(e)}), 500
-    
-@app.route('/')
-def serve_index():
-    return send_from_directory('static', 'index.html')
 
 # --- INICIA O SERVIDOR ---
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    print(f"Iniciando servidor na porta {port}...")
-    app.run(host='0.0.0.0', port=port)
+    print("Iniciando servidor do Agente de Pesquisa..."); print("Acesse a interface abrindo o arquivo index.html no seu navegador.")
+    app.run(debug=True, port=5000)
+
