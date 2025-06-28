@@ -182,6 +182,7 @@
         dom.buildFrameworkButton.addEventListener('click', handleBuildFramework); 
         dom.backToManageButton.addEventListener('click', () => showScreen('manage')); 
         dom.closeModalButtons.forEach(btn => btn.addEventListener('click', (e) => closeModal(e.target.closest('button').dataset.modalTarget)));
+        dom.startSearchButton.addEventListener('click', handleStartSearch);
         dom.generateButton.addEventListener('click', handleGenerateFichamentos);
         dom.backToHomeButton.addEventListener('click', () => showScreen('dashboard'));
         dom.backToHomeFromManageButton.addEventListener('click', () => showScreen('dashboard'));
