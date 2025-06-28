@@ -80,7 +80,16 @@
             bibFileInput: document.getElementById('bibFileInput'),
             fileNameDisplay: document.getElementById('fileNameDisplay')
         };
-        const showScreen = name => { Object.values(dom.screens).forEach(s => s.classList.add('hidden-screen')); dom.screens[name].classList.remove('hidden-screen');};
+        const showScreen = name => { 
+            Object.values(dom.screens).forEach(s => s.classList.add('hidden-screen')); 
+            dom.screens[name].classList.remove('hidden-screen');
+            const appDiv = document.getElementById('app');
+            if (name === 'dashboard') {
+                appDiv.classList.add('flex', 'items-center', 'justify-center');
+            } else {
+                appDiv.classList.remove('flex', 'items-center', 'justify-center');
+            }
+        };
         const openModal = name => { dom.modals[name].classList.remove('invisible', 'opacity-0'); dom.modals[name].querySelector('div > div').classList.remove('scale-95'); };
         const closeModal = name => { if (dom.modals[name]) { dom.modals[name].classList.add('opacity-0'); dom.modals[name].querySelector('div > div').classList.add('scale-95'); setTimeout(() => dom.modals[name].classList.add('invisible'), 300); } };
         
@@ -173,7 +182,6 @@
         dom.buildFrameworkButton.addEventListener('click', handleBuildFramework); 
         dom.backToManageButton.addEventListener('click', () => showScreen('manage')); 
         dom.closeModalButtons.forEach(btn => btn.addEventListener('click', (e) => closeModal(e.target.closest('button').dataset.modalTarget)));
-        dom.startSearchButton.addEventListener('click', handleStartSearch);
         dom.generateButton.addEventListener('click', handleGenerateFichamentos);
         dom.backToHomeButton.addEventListener('click', () => showScreen('dashboard'));
         dom.backToHomeFromManageButton.addEventListener('click', () => showScreen('dashboard'));
