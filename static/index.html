@@ -26,14 +26,12 @@
 <body class="text-gray-800">
     <div id="app" class="p-4 sm:p-8 min-h-screen">
         <!-- Telas -->
-        <div id="dashboardScreen" class="screen flex items-center justify-center min-h-full">
-            <div class="w-full max-w-2xl mx-auto text-center">
-                <h1 class="text-3xl sm:text-4xl font-bold text-gray-700 mb-2">Agente de Pesquisa Acadêmica</h1>
-                <p class="text-gray-500 mb-12">Seu assistente para a construção do referencial teórico.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div id="newSearchCard" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer border"><span class="material-icons text-5xl text-blue-500 mb-4">search</span><h2 class="text-xl font-semibold">Nova Busca</h2><p class="text-gray-500 mt-1">Encontre novos artigos.</p></div>
-                    <div id="manageCard" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer border"><span class="material-icons text-5xl text-purple-500 mb-4">inventory_2</span><h2 class="text-xl font-semibold">Gerenciar Fichamentos</h2><p class="text-gray-500 mt-1">Organize seus artigos.</p></div>
-                </div>
+        <div id="dashboardScreen" class="screen w-full max-w-2xl mx-auto text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-700 mb-2">Agente de Pesquisa Acadêmica</h1>
+            <p class="text-gray-500 mb-12">Seu assistente para a construção do referencial teórico.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div id="newSearchCard" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer border"><span class="material-icons text-5xl text-blue-500 mb-4">search</span><h2 class="text-xl font-semibold">Nova Busca</h2><p class="text-gray-500 mt-1">Encontre novos artigos.</p></div>
+                <div id="manageCard" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer border"><span class="material-icons text-5xl text-purple-500 mb-4">inventory_2</span><h2 class="text-xl font-semibold">Gerenciar Fichamentos</h2><p class="text-gray-500 mt-1">Organize seus artigos.</p></div>
             </div>
         </div>
         <div id="loadingScreen" class="screen hidden-screen w-full text-center py-20"><div class="flex justify-center items-center"><div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div></div><p class="text-gray-600 mt-4 text-lg">Processando...</p></div>
@@ -57,7 +55,9 @@
     </div>
 
     <script>
+        // CONFIGURAÇÃO AUTOMÁTICA DE URL - Detecta se está no Render ou local
         const API_URL = window.location.hostname.includes('onrender.com') ? window.location.origin : 'http://127.0.0.1:5000';
+        
         let currentArticles = [], savedArticles = [], displayedCount = 0, rowToDelete = null, articleToEdit = null;
         const articlesPerPage = 5;
         let currentSearchTerm = '';
@@ -80,31 +80,51 @@
             bibFileInput: document.getElementById('bibFileInput'),
             fileNameDisplay: document.getElementById('fileNameDisplay')
         };
-        const showScreen = name => { 
-            Object.values(dom.screens).forEach(s => s.classList.add('hidden-screen')); 
-            dom.screens[name].classList.remove('hidden-screen');
-            const appDiv = document.getElementById('app');
-            if (name === 'dashboard') {
-                appDiv.classList.add('flex', 'items-center', 'justify-center');
-            } else {
-                appDiv.classList.remove('flex', 'items-center', 'justify-center');
-            }
-        };
+        
+        const showScreen = name => { Object.values(dom.screens).forEach(s => s.classList.add('hidden-screen')); dom.screens[name].classList.remove('hidden-screen');};
         const openModal = name => { dom.modals[name].classList.remove('invisible', 'opacity-0'); dom.modals[name].querySelector('div > div').classList.remove('scale-95'); };
         const closeModal = name => { if (dom.modals[name]) { dom.modals[name].classList.add('opacity-0'); dom.modals[name].querySelector('div > div').classList.add('scale-95'); setTimeout(() => dom.modals[name].classList.add('invisible'), 300); } };
         
         async function apiCall(endpoint, method = 'GET', body = null) {
             try {
+                console.log(`[API] Chamando ${method} ${endpoint}`);
                 dom.screens.loading.classList.remove('hidden-screen');
+                
                 const options = { method };
-                if (body instanceof FormData) { options.body = body; } 
-                else if (body) { options.headers = { 'Content-Type': 'application/json' }; options.body = JSON.stringify(body); }
+                if (body instanceof FormData) { 
+                    options.body = body; 
+                } else if (body) { 
+                    options.headers = { 'Content-Type': 'application/json' }; 
+                    options.body = JSON.stringify(body); 
+                }
+                
                 const response = await fetch(`${API_URL}${endpoint}`, options);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return await response.json();
+                console.log(`[API] Resposta: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`[API] Erro: ${response.status} - ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log(`[API] Sucesso:`, result);
+                return result;
+                
             } catch (error) {
-                console.error(`API call to ${endpoint} failed:`, error);
-                alert(`Erro de comunicação com o servidor. Verifique o console do navegador e o terminal do Python.`);
+                console.error(`[API] Falha na chamada para ${endpoint}:`, error);
+                
+                // Mensagens de erro mais específicas
+                let errorMessage = 'Erro de comunicação com o servidor.';
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Não foi possível conectar ao servidor. Verifique se o backend está funcionando.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Erro interno do servidor. Verifique os logs do backend.';
+                } else if (error.message.includes('404')) {
+                    errorMessage = 'Endpoint não encontrado. Verifique a configuração da API.';
+                }
+                
+                alert(`${errorMessage}\n\nDetalhes técnicos: ${error.message}`);
                 showScreen('dashboard');
                 return null;
             } finally {
@@ -112,32 +132,251 @@
             }
         }
         
-        const sortArticles = () => { const sortBy = dom.sortOrder.value; currentArticles.sort((a, b) => {if (sortBy === 'recent') return (b.year || 0) - (a.year || 0); if (sortBy === 'citations') return (b.citations || 0) - (a.citations || 0); if (sortBy === 'relevance') { const currentYear = new Date().getFullYear(); const getRecencyFactor = (year) => { const age = currentYear - (year || currentYear); if (age <= 1) return 1.5; if (age <= 3) return 1.2; return 1; }; return ((b.citations || 0) * getRecencyFactor(b.year)) - ((a.citations || 0) * getRecencyFactor(a.year)); } return 0; }); };
-        const renderSearchResults = () => { sortArticles(); dom.articlesList.innerHTML = ''; const articlesToRender = currentArticles.slice(0, displayedCount); articlesToRender.forEach(article => { const articleElement = document.createElement('div'); articleElement.className = 'p-4 sm:p-6 flex items-start gap-4'; const isChecked = selectedArticleIds.has(article.id) ? 'checked' : ''; articleElement.innerHTML = `<div class="flex-shrink-0 mt-1"><input type="checkbox" data-id="${article.id}" class="article-checkbox h-5 w-5 rounded border-gray-300 text-blue-600" ${isChecked}></div><div class="flex-grow"><p class="text-lg font-semibold text-gray-800">${article.title}</p><p class="text-sm text-gray-500 mt-1">${(article.authors || []).join(', ')}</p><div class="flex items-center gap-4 text-sm text-gray-600 mt-2"><span><strong>Ano:</strong> ${article.year || 'N/A'}</span><span class="text-gray-300">|</span><span><strong>Fonte:</strong> ${article.source}</span><span class="text-gray-300">|</span><span><strong>Citações:</strong> ${article.citations || 0}</span></div></div><div class="flex-shrink-0 ml-4"><a href="${article.url}" target="_blank" class="p-2 rounded-full hover:bg-gray-100" title="Ver artigo original"><span class="material-icons">open_in_new</span></a></div>`; dom.articlesList.appendChild(articleElement); }); document.querySelectorAll('.article-checkbox').forEach(cb => cb.addEventListener('change', updateSelectionState)); updateCounter(); updateSelectionState(); };
-        const updateCounter = () => { dom.resultsCounter.textContent = `Mostrando ${Math.min(displayedCount, currentArticles.length)} de ${currentArticles.length} artigos.`; dom.loadMoreButton.disabled = displayedCount >= currentArticles.length; };
-        const updateSelectionState = (e) => { if(e) { const checkbox = e.target; if (checkbox.checked) { selectedArticleIds.add(checkbox.dataset.id); } else { selectedArticleIds.delete(checkbox.dataset.id); } } const count = selectedArticleIds.size; dom.generateButton.disabled = count === 0; dom.generateButton.innerHTML = `<span class="material-icons mr-2">description</span> Gerar Fichamento (${count})`; if (count === 0) { dom.selectAllCheckbox.checked = false; dom.selectAllCheckbox.indeterminate = false; } else if (count === currentArticles.length) { dom.selectAllCheckbox.checked = true; dom.selectAllCheckbox.indeterminate = false; } else { dom.selectAllCheckbox.checked = false; dom.selectAllCheckbox.indeterminate = true; } };
-        const handleSelectAll = (event) => { if (event.target.checked) { currentArticles.forEach(a => selectedArticleIds.add(a.id)); } else { selectedArticleIds.clear(); } renderSearchResults(); };
-        const handleStartSearch = async () => { closeModal('search'); currentSearchTerm = dom.mainSearchInput.value; const payload = { searchType: document.querySelector('input[name="searchType"]:checked').value, queryText: currentSearchTerm, minYear: document.getElementById('minYear').value, minCitations: document.getElementById('minCitations').value, }; selectedArticleIds.clear(); const articles = await apiCall('/api/search', 'POST', payload); if (articles) { currentArticles = articles; displayedCount = articlesPerPage; dom.searchQueryDisplay.textContent = `Busca por: "${currentSearchTerm}"`; renderSearchResults(); showScreen('results'); } };
-        const handleLoadMore = () => { displayedCount += articlesPerPage; renderSearchResults(); };
-        const handleGenerateFichamentos = async () => { const articlesToGenerate = currentArticles.filter(a => selectedArticleIds.has(a.id)); dom.generateButton.disabled = true; dom.generateButton.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>`; const result = await apiCall('/api/generate', 'POST', { articles: articlesToGenerate }); if (result) { alert(result.message); currentArticles = currentArticles.filter(a => !selectedArticleIds.has(a.id)); selectedArticleIds.clear(); displayedCount = Math.min(displayedCount, currentArticles.length); renderSearchResults(); } dom.generateButton.disabled = false; updateSelectionState(); };
+        const sortArticles = () => { 
+            const sortBy = dom.sortOrder.value; 
+            currentArticles.sort((a, b) => {
+                if (sortBy === 'recent') return (b.year || 0) - (a.year || 0); 
+                if (sortBy === 'citations') return (b.citations || 0) - (a.citations || 0); 
+                if (sortBy === 'relevance') { 
+                    const currentYear = new Date().getFullYear(); 
+                    const getRecencyFactor = (year) => { 
+                        const age = currentYear - (year || currentYear); 
+                        if (age <= 1) return 1.5; 
+                        if (age <= 3) return 1.2; 
+                        return 1; 
+                    }; 
+                    return ((b.citations || 0) * getRecencyFactor(b.year)) - ((a.citations || 0) * getRecencyFactor(a.year)); 
+                } 
+                return 0; 
+            }); 
+        };
         
-        const populateFilters = () => { const years = [...new Set(savedArticles.map(a => a.year))].sort((a,b) => b-a); const topics = [...new Set(savedArticles.map(a => a.topic))]; dom.filterYear.innerHTML = '<option value="all">Ano (Todos)</option>'; dom.filterTopic.innerHTML = '<option value="all">Tópico (Todos)</option>'; years.forEach(y => dom.filterYear.innerHTML += `<option value="${y}">${y}</option>`); topics.forEach(t => dom.filterTopic.innerHTML += `<option value="${t}">${t}</option>`); };
+        const renderSearchResults = () => { 
+            sortArticles(); 
+            dom.articlesList.innerHTML = ''; 
+            const articlesToRender = currentArticles.slice(0, displayedCount); 
+            articlesToRender.forEach(article => { 
+                const articleElement = document.createElement('div'); 
+                articleElement.className = 'p-4 sm:p-6 flex items-start gap-4'; 
+                const isChecked = selectedArticleIds.has(article.id) ? 'checked' : ''; 
+                articleElement.innerHTML = `<div class="flex-shrink-0 mt-1"><input type="checkbox" data-id="${article.id}" class="article-checkbox h-5 w-5 rounded border-gray-300 text-blue-600" ${isChecked}></div><div class="flex-grow"><p class="text-lg font-semibold text-gray-800">${article.title}</p><p class="text-sm text-gray-500 mt-1">${(article.authors || []).join(', ')}</p><div class="flex items-center gap-4 text-sm text-gray-600 mt-2"><span><strong>Ano:</strong> ${article.year || 'N/A'}</span><span class="text-gray-300">|</span><span><strong>Fonte:</strong> ${article.source}</span><span class="text-gray-300">|</span><span><strong>Citações:</strong> ${article.citations || 0}</span></div></div><div class="flex-shrink-0 ml-4"><a href="${article.url}" target="_blank" class="p-2 rounded-full hover:bg-gray-100" title="Ver artigo original"><span class="material-icons">open_in_new</span></a></div>`; 
+                dom.articlesList.appendChild(articleElement); 
+            }); 
+            document.querySelectorAll('.article-checkbox').forEach(cb => cb.addEventListener('change', updateSelectionState)); 
+            updateCounter(); 
+            updateSelectionState(); 
+        };
+        
+        const updateCounter = () => { 
+            dom.resultsCounter.textContent = `Mostrando ${Math.min(displayedCount, currentArticles.length)} de ${currentArticles.length} artigos.`; 
+            dom.loadMoreButton.disabled = displayedCount >= currentArticles.length; 
+        };
+        
+        const updateSelectionState = (e) => { 
+            if(e) { 
+                const checkbox = e.target; 
+                if (checkbox.checked) { 
+                    selectedArticleIds.add(checkbox.dataset.id); 
+                } else { 
+                    selectedArticleIds.delete(checkbox.dataset.id); 
+                } 
+            } 
+            const count = selectedArticleIds.size; 
+            dom.generateButton.disabled = count === 0; 
+            dom.generateButton.innerHTML = `<span class="material-icons mr-2">description</span> Gerar Fichamento (${count})`; 
+            if (count === 0) { 
+                dom.selectAllCheckbox.checked = false; 
+                dom.selectAllCheckbox.indeterminate = false; 
+            } else if (count === currentArticles.length) { 
+                dom.selectAllCheckbox.checked = true; 
+                dom.selectAllCheckbox.indeterminate = false; 
+            } else { 
+                dom.selectAllCheckbox.checked = false; 
+                dom.selectAllCheckbox.indeterminate = true; 
+            } 
+        };
+        
+        const handleSelectAll = (event) => { 
+            if (event.target.checked) { 
+                currentArticles.forEach(a => selectedArticleIds.add(a.id)); 
+            } else { 
+                selectedArticleIds.clear(); 
+            } 
+            renderSearchResults(); 
+        };
+        
+        const handleStartSearch = async () => { 
+            closeModal('search'); 
+            currentSearchTerm = dom.mainSearchInput.value; 
+            const payload = { 
+                searchType: document.querySelector('input[name="operationType"]:checked').value === 'ia' ? 'ia' : 'direct', 
+                queryText: currentSearchTerm, 
+                minYear: document.getElementById('minYear').value, 
+                minCitations: document.getElementById('minCitations').value 
+            }; 
+            selectedArticleIds.clear(); 
+            const articles = await apiCall('/api/search', 'POST', payload); 
+            if (articles) { 
+                currentArticles = articles; 
+                displayedCount = articlesPerPage; 
+                dom.searchQueryDisplay.textContent = `Busca por: "${currentSearchTerm}"`; 
+                renderSearchResults(); 
+                showScreen('results'); 
+            } 
+        };
+        
+        const handleLoadMore = () => { 
+            displayedCount += articlesPerPage; 
+            renderSearchResults(); 
+        };
+        
+        const handleGenerateFichamentos = async () => { 
+            const articlesToGenerate = currentArticles.filter(a => selectedArticleIds.has(a.id)); 
+            dom.generateButton.disabled = true; 
+            dom.generateButton.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>`; 
+            const result = await apiCall('/api/generate', 'POST', { articles: articlesToGenerate }); 
+            if (result) { 
+                alert(result.message); 
+                currentArticles = currentArticles.filter(a => !selectedArticleIds.has(a.id)); 
+                selectedArticleIds.clear(); 
+                displayedCount = Math.min(displayedCount, currentArticles.length); 
+                renderSearchResults(); 
+            } 
+            dom.generateButton.disabled = false; 
+            updateSelectionState(); 
+        };
+        
+        const populateFilters = () => { 
+            const years = [...new Set(savedArticles.map(a => a.year))].sort((a,b) => b-a); 
+            const topics = [...new Set(savedArticles.map(a => a.topic))]; 
+            dom.filterYear.innerHTML = '<option value="all">Ano (Todos)</option>'; 
+            dom.filterTopic.innerHTML = '<option value="all">Tópico (Todos)</option>'; 
+            years.forEach(y => dom.filterYear.innerHTML += `<option value="${y}">${y}</option>`); 
+            topics.forEach(t => dom.filterTopic.innerHTML += `<option value="${t}">${t}</option>`); 
+        };
+        
         const renderManageTable = () => {
             populateFilters(); 
             const canBuild = savedArticles.some(a => a.read && a.specificObjective);
             dom.buildFrameworkButton.disabled = !canBuild;
             dom.manageTableBody.innerHTML = ''; 
-            const filteredArticles = savedArticles.filter(a => (dom.filterStatus.value === 'all' || (dom.filterStatus.value === 'read' && a.read) || (dom.filterStatus.value === 'unread' && !a.read)) && (dom.filterYear.value === 'all' || a.year == dom.filterYear.value) && (dom.filterTopic.value === 'all' || a.topic == dom.filterTopic.value)); 
-            filteredArticles.forEach(article => { const row = document.createElement('tr'); row.className = `bg-white border-b ${article.read ? 'read-row' : ''}`; row.dataset.id = article.id; row.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${article.read ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${article.read ? 'Lido' : 'Não Lido'}</span></td><td class="px-6 py-4 font-medium text-gray-900">${article.title}</td><td class="px-6 py-4">${article.topic}</td><td class="px-6 py-4 text-center"><div class="flex justify-center items-center gap-1"><button class="toggle-read p-2" title="Marcar"><span class="material-icons">visibility</span></button><button class="view-summary p-2" title="Ver resumo"><span class="material-icons">info</span></button><button class="view-details p-2" title="Ver detalhes"><span class="material-icons">article</span></button><button class="delete-row p-2" title="Excluir"><span class="material-icons">delete_outline</span></button></div></td>`; dom.manageTableBody.appendChild(row); }); 
+            const filteredArticles = savedArticles.filter(a => 
+                (dom.filterStatus.value === 'all' || 
+                 (dom.filterStatus.value === 'read' && a.read) || 
+                 (dom.filterStatus.value === 'unread' && !a.read)) && 
+                (dom.filterYear.value === 'all' || a.year == dom.filterYear.value) && 
+                (dom.filterTopic.value === 'all' || a.topic == dom.filterTopic.value)
+            ); 
+            filteredArticles.forEach(article => { 
+                const row = document.createElement('tr'); 
+                row.className = `bg-white border-b ${article.read ? 'read-row' : ''}`; 
+                row.dataset.id = article.id; 
+                row.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${article.read ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${article.read ? 'Lido' : 'Não Lido'}</span></td><td class="px-6 py-4 font-medium text-gray-900">${article.title}</td><td class="px-6 py-4">${article.topic}</td><td class="px-6 py-4 text-center"><div class="flex justify-center items-center gap-1"><button class="toggle-read p-2" title="Marcar"><span class="material-icons">visibility</span></button><button class="view-summary p-2" title="Ver resumo"><span class="material-icons">info</span></button><button class="view-details p-2" title="Ver detalhes"><span class="material-icons">article</span></button><button class="delete-row p-2" title="Excluir"><span class="material-icons">delete_outline</span></button></div></td>`; 
+                dom.manageTableBody.appendChild(row); 
+            }); 
         };
-        const handleManageTableClick = e => { const button = e.target.closest('button'); if (!button) return; const row = e.target.closest('tr'); articleToEdit = savedArticles.find(a => a.id === row.dataset.id); if (!articleToEdit) return; if (button.classList.contains('toggle-read')) { articleToEdit.read = !articleToEdit.read; articleToEdit.readDate = articleToEdit.read ? new Date().toISOString().split('T')[0] : null; renderManageTable(); apiCall('/api/manage/update', 'POST', { articles: savedArticles }); } else if (button.classList.contains('view-summary')) { dom.summaryModalContent.textContent = articleToEdit.summary; openModal('summary'); } else if (button.classList.contains('view-details')) { dom.detailsModalContent.innerHTML = `<ul><li><strong>Autores:</strong> <span>${(articleToEdit.authors||[]).join(', ')}</span></li><li><strong>Ano:</strong> <span>${articleToEdit.year}</span></li><li><strong>Citações:</strong> <span>${articleToEdit.citations}</span></li><li><strong>Data de Seleção:</strong> <span>${articleToEdit.selectionDate}</span></li><li><strong>Data de Leitura:</strong> <span>${articleToEdit.readDate || 'Não lido'}</span></li><li><strong>Link:</strong> <a href="${articleToEdit.url}" target="_blank" class="text-blue-600">Ver original</a></li></ul><hr class="my-4"><div><label class="block font-medium mb-2">Objetivo Específico</label><textarea id="specificObjective" rows="3" class="w-full p-2 border rounded-lg">${articleToEdit.specificObjective || ''}</textarea></div>`; openModal('details'); } else if (button.classList.contains('delete-row')) { rowToDelete = row; openModal('confirmDelete'); } };
-        const saveDetails = async () => { if(articleToEdit) articleToEdit.specificObjective = document.getElementById('specificObjective').value; await apiCall('/api/manage/update', 'POST', { articles: savedArticles }); closeModal('details'); renderManageTable(); };
-        const executeDelete = async () => { if (rowToDelete) { savedArticles = savedArticles.filter(a => a.id !== rowToDelete.dataset.id); await apiCall('/api/manage/update', 'POST', { articles: savedArticles }); renderManageTable(); } closeModal('confirmDelete'); };
-        const loadManageScreen = async () => { showScreen('loading'); const data = await apiCall('/api/manage/load'); if (data !== null) { savedArticles = data; renderManageTable(); showScreen('manage'); } };
-        const handleBuildFramework = async () => { showScreen('loading'); const data = await apiCall('/api/build-framework'); if (data) { dom.frameworkContent.innerHTML = ''; if (Object.keys(data).length === 0) { dom.frameworkContent.innerHTML = '<p class="text-gray-500">Nenhum artigo lido com objetivo específico encontrado. Marque alguns artigos como "Lido" e adicione um objetivo para começar.</p>'; } else { for (const objective in data) { const section = document.createElement('div'); section.className = 'mb-8'; let referencesHTML = data[objective].map(ref => `<li class="text-gray-700 leading-relaxed p-2 bg-gray-50 rounded-md flex justify-between items-center"><span>${ref}</span><button class="copy-ref p-1 text-gray-400 hover:text-blue-600" title="Copiar referência"><span class="material-icons text-base">content_copy</span></button></li>`).join(''); section.innerHTML = `<details class="bg-white p-4 rounded-lg shadow-sm" open><summary class="font-semibold text-lg cursor-pointer">${objective}</summary><ul class="space-y-3 mt-4">${referencesHTML}</ul></details>`; dom.frameworkContent.appendChild(section); } } showScreen('framework'); } };
-        const handleFrameworkClick = (e) => { const copyButton = e.target.closest('.copy-ref'); if (copyButton) { const textToCopy = copyButton.parentElement.querySelector('span').innerText; navigator.clipboard.writeText(textToCopy).then(() => alert('Referência copiada!'), () => alert('Falha ao copiar.')); } else if (e.target.tagName !== 'SUMMARY') { e.preventDefault(); } };
-        const updatePlaceholder = () => { dom.mainSearchInput.placeholder = document.querySelector('input[name="operationType"]:checked').value === 'ia' ? "Digite sua pergunta de pesquisa ou objetivo..." : "Digite os termos de busca (ex: 'user experience' AND 'SME')..."; };
-        const handleAddByLink = async () => { const url = dom.urlInput.value; if (!url) { alert('Por favor, insira uma URL.'); return; } closeModal('addByLink'); const result = await apiCall('/api/add-by-url', 'POST', { url }); if (result) { alert(result.message); if (result.status === 'success') { loadManageScreen(); } else { showScreen('dashboard'); } } };
+        
+        const handleManageTableClick = e => { 
+            const button = e.target.closest('button'); 
+            if (!button) return; 
+            const row = e.target.closest('tr'); 
+            articleToEdit = savedArticles.find(a => a.id === row.dataset.id); 
+            if (!articleToEdit) return; 
+            if (button.classList.contains('toggle-read')) { 
+                articleToEdit.read = !articleToEdit.read; 
+                articleToEdit.readDate = articleToEdit.read ? new Date().toISOString().split('T')[0] : null; 
+                renderManageTable(); 
+                apiCall('/api/manage/update', 'POST', { articles: savedArticles }); 
+            } else if (button.classList.contains('view-summary')) { 
+                dom.summaryModalContent.textContent = articleToEdit.summary; 
+                openModal('summary'); 
+            } else if (button.classList.contains('view-details')) { 
+                dom.detailsModalContent.innerHTML = `<ul><li><strong>Autores:</strong> <span>${(articleToEdit.authors||[]).join(', ')}</span></li><li><strong>Ano:</strong> <span>${articleToEdit.year}</span></li><li><strong>Citações:</strong> <span>${articleToEdit.citations}</span></li><li><strong>Data de Seleção:</strong> <span>${articleToEdit.selectionDate}</span></li><li><strong>Data de Leitura:</strong> <span>${articleToEdit.readDate || 'Não lido'}</span></li><li><strong>Link:</strong> <a href="${articleToEdit.url}" target="_blank" class="text-blue-600">Ver original</a></li></ul><hr class="my-4"><div><label class="block font-medium mb-2">Objetivo Específico</label><textarea id="specificObjective" rows="3" class="w-full p-2 border rounded-lg">${articleToEdit.specificObjective || ''}</textarea></div>`; 
+                openModal('details'); 
+            } else if (button.classList.contains('delete-row')) { 
+                rowToDelete = row; 
+                openModal('confirmDelete'); 
+            } 
+        };
+        
+        const saveDetails = async () => { 
+            if(articleToEdit) articleToEdit.specificObjective = document.getElementById('specificObjective').value; 
+            await apiCall('/api/manage/update', 'POST', { articles: savedArticles }); 
+            closeModal('details'); 
+            renderManageTable(); 
+        };
+        
+        const executeDelete = async () => { 
+            if (rowToDelete) { 
+                savedArticles = savedArticles.filter(a => a.id !== rowToDelete.dataset.id); 
+                await apiCall('/api/manage/update', 'POST', { articles: savedArticles }); 
+                renderManageTable(); 
+            } 
+            closeModal('confirmDelete'); 
+        };
+        
+        const loadManageScreen = async () => { 
+            showScreen('loading'); 
+            const data = await apiCall('/api/manage/load'); 
+            if (data !== null) { 
+                savedArticles = data; 
+                renderManageTable(); 
+                showScreen('manage'); 
+            } 
+        };
+        
+        const handleBuildFramework = async () => { 
+            showScreen('loading'); 
+            const data = await apiCall('/api/build-framework'); 
+            if (data) { 
+                dom.frameworkContent.innerHTML = ''; 
+                if (Object.keys(data).length === 0) { 
+                    dom.frameworkContent.innerHTML = '<p class="text-gray-500">Nenhum artigo lido com objetivo específico encontrado. Marque alguns artigos como "Lido" e adicione um objetivo para começar.</p>'; 
+                } else { 
+                    for (const objective in data) { 
+                        const section = document.createElement('div'); 
+                        section.className = 'mb-8'; 
+                        let referencesHTML = data[objective].map(ref => `<li class="text-gray-700 leading-relaxed p-2 bg-gray-50 rounded-md flex justify-between items-center"><span>${ref}</span><button class="copy-ref p-1 text-gray-400 hover:text-blue-600" title="Copiar referência"><span class="material-icons text-base">content_copy</span></button></li>`).join(''); 
+                        section.innerHTML = `<details class="bg-white p-4 rounded-lg shadow-sm" open><summary class="font-semibold text-lg cursor-pointer">${objective}</summary><ul class="space-y-3 mt-4">${referencesHTML}</ul></details>`; 
+                        dom.frameworkContent.appendChild(section); 
+                    } 
+                } 
+                showScreen('framework'); 
+            } 
+        };
+        
+        const handleFrameworkClick = (e) => { 
+            const copyButton = e.target.closest('.copy-ref'); 
+            if (copyButton) { 
+                const textToCopy = copyButton.parentElement.querySelector('span').innerText; 
+                navigator.clipboard.writeText(textToCopy).then(() => alert('Referência copiada!'), () => alert('Falha ao copiar.')); 
+            } else if (e.target.tagName !== 'SUMMARY') { 
+                e.preventDefault(); 
+            } 
+        };
+        
+        const updatePlaceholder = () => { 
+            dom.mainSearchInput.placeholder = document.querySelector('input[name="operationType"]:checked').value === 'ia' ? "Digite sua pergunta de pesquisa ou objetivo..." : "Digite os termos de busca (ex: 'user experience' AND 'SME')..."; 
+        };
+        
+        const handleAddByLink = async () => { 
+            const url = dom.urlInput.value; 
+            if (!url) { 
+                alert('Por favor, insira uma URL.'); 
+                return; 
+            } 
+            closeModal('addByLink'); 
+            const result = await apiCall('/api/add-by-url', 'POST', { url }); 
+            if (result) { 
+                alert(result.message); 
+                if (result.status === 'success') { 
+                    loadManageScreen(); 
+                } else { 
+                    showScreen('dashboard'); 
+                } 
+            } 
+        };
+        
         const handleOperationTypeChange = () => {
             const selectedValue = document.querySelector('input[name="operationType"]:checked').value;
             if (selectedValue === 'import') {
@@ -151,26 +390,34 @@
                 updatePlaceholder();
             }
         };
-        const handleBibFileSelect = async (event) => {
+        
+        const handleBibFileSelect = (event) => {
             const file = event.target.files[0];
-            if (!file) return;
-            dom.fileNameDisplay.textContent = file.name;
-            const formData = new FormData();
-            formData.append('file', file);
-            closeModal('search');
-            const articles = await apiCall('/api/import-bib', 'POST', formData);
-            if (articles) {
-                currentArticles = articles;
-                displayedCount = articlesPerPage;
-                dom.searchQueryDisplay.textContent = `Artigos importados de ${file.name}`;
-                renderSearchResults();
-                showScreen('results');
+            if (file) {
+                dom.fileNameDisplay.textContent = file.name;
+                dom.mainActionButton.disabled = false;
             }
         };
-        const handleMainAction = () => {
+        
+        const handleMainAction = async () => {
             const selectedValue = document.querySelector('input[name="operationType"]:checked').value;
             if (selectedValue === 'import') {
-                dom.bibFileInput.click();
+                const file = dom.bibFileInput.files[0];
+                if (!file) { 
+                    alert("Por favor, selecione um ficheiro .bib"); 
+                    return; 
+                }
+                const formData = new FormData();
+                formData.append('file', file);
+                closeModal('search');
+                const articles = await apiCall('/api/import-bib', 'POST', formData);
+                if (articles) {
+                    currentArticles = articles;
+                    displayedCount = articlesPerPage;
+                    dom.searchQueryDisplay.textContent = `Artigos importados de ${file.name}`;
+                    renderSearchResults();
+                    showScreen('results');
+                }
             } else {
                 handleStartSearch();
             }
@@ -182,7 +429,6 @@
         dom.buildFrameworkButton.addEventListener('click', handleBuildFramework); 
         dom.backToManageButton.addEventListener('click', () => showScreen('manage')); 
         dom.closeModalButtons.forEach(btn => btn.addEventListener('click', (e) => closeModal(e.target.closest('button').dataset.modalTarget)));
-        dom.startSearchButton.addEventListener('click', handleStartSearch);
         dom.generateButton.addEventListener('click', handleGenerateFichamentos);
         dom.backToHomeButton.addEventListener('click', () => showScreen('dashboard'));
         dom.backToHomeFromManageButton.addEventListener('click', () => showScreen('dashboard'));
@@ -197,11 +443,17 @@
         dom.operationTypeRadios.forEach(radio => radio.addEventListener('change', handleOperationTypeChange));
         dom.mainActionButton.addEventListener('click', handleMainAction);
         dom.bibFileInput.addEventListener('change', handleBibFileSelect);
-        dom.copyFrameworkButton.addEventListener('click', (e) => { e.stopPropagation(); const text = dom.frameworkContent.innerText; navigator.clipboard.writeText(text).then(() => alert('Referencial copiado!'), () => alert('Falha ao copiar.')); });
+        dom.copyFrameworkButton.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            const text = dom.frameworkContent.innerText; 
+            navigator.clipboard.writeText(text).then(() => alert('Referencial copiado!'), () => alert('Falha ao copiar.')); 
+        });
         dom.frameworkContent.addEventListener('click', handleFrameworkClick);
         dom.addByLinkCard.addEventListener('click', () => openModal('addByLink'));
         dom.addByLinkActionButton.addEventListener('click', handleAddByLink);
         
+        // INICIALIZAÇÃO
+        console.log(`[INIT] API_URL configurada como: ${API_URL}`);
         showScreen('dashboard');
         updatePlaceholder();
     </script>
