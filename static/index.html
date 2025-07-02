@@ -1,52 +1,13 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente de Pesquisa Acadêmica</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter e Material Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .modal-container, .screen { transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; }
-        .hidden-screen { display: none; }
-        .read-row { background-color: #f0fdf4; }
-        .read-row:hover { background-color: #dcfce7; }
-        #detailsModalContent ul, #frameworkContent ul { list-style: none; padding: 0; }
-        #detailsModalContent li, #frameworkContent li { display: flex; flex-direction: column; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb; }
-        #detailsModalContent li:last-child, #frameworkContent li:last-child { border-bottom: none; }
-        #detailsModalContent li strong, #frameworkContent h3 { color: #374151; margin-bottom: 0.25rem; }
-    </style>
-</head>
-<body class="text-gray-800">
-    <div id="app" class="p-4 sm:p-8 min-h-screen">
-        <!-- Telas -->
-        <div id="dashboardScreen" class="screen w-full max-w-2xl mx-auto text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-700 mb-2">Agente de Pesquisa Acadêmica</h1>
-            <p class="text-gray-500 mb-12">Seu assistente para a construção do referencial teórico.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div id="newSearchCard" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer border"><span class="material-icons text-5xl text-blue-500 mb-4">search</span><h2 class="text-xl font-semibold">Nova Busca</h2><p class="text-gray-500 mt-1">Encontre novos artigos.</p></div>
-                <div id="manageCard" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer border"><span class="material-icons text-5xl text-purple-500 mb-4">inventory_2</span><h2 class="text-xl font-semibold">Gerenciar Fichamentos</h2><p class="text-gray-500 mt-1">Organize seus artigos.</p></div>
+<p id="fileNameDisplay" class="text-sm text-center text-gray-500 mt-2"></p>
+                    </div>
+                </div>
+                
+                <button id="mainActionButton" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg flex items-center justify-center text-lg">
+                    <span class="material-icons mr-2">search</span>Buscar Artigos
+                </button>
             </div>
         </div>
-        <div id="loadingScreen" class="screen hidden-screen w-full text-center py-20"><div class="flex justify-center items-center"><div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div></div><p class="text-gray-600 mt-4 text-lg">Processando...</p></div>
-        <div id="resultsScreen" class="screen hidden-screen w-full max-w-4xl mx-auto">
-            <div class="bg-white rounded-2xl shadow-lg border"><div class="p-4 sm:p-6 border-b flex justify-between items-center gap-4"><div class="flex items-center gap-4"><button id="backToHomeButton" class="p-2 rounded-full hover:bg-gray-100"><span class="material-icons">arrow_back</span></button><div><h2 class="text-2xl font-bold">Resultados da Busca</h2><p id="searchQueryDisplay" class="text-sm text-gray-500 mt-1"></p><p id="resultsCounter" class="text-sm text-gray-500"></p></div></div><button id="generateButton" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 flex items-center disabled:bg-gray-400" disabled><span class="material-icons mr-2">description</span>Gerar Fichamento (0)</button></div><div class="p-4 flex justify-between items-center border-b bg-gray-50"><div class="flex items-center"><input type="checkbox" id="selectAllCheckbox" class="h-5 w-5 rounded border-gray-300 text-blue-600"><label for="selectAllCheckbox" class="ml-3 text-sm font-medium">Selecionar Todos</label></div><div class="flex items-center gap-2"><label for="sortOrder" class="text-sm font-medium">Ordenar por:</label><select id="sortOrder" class="rounded-lg border-gray-300 text-sm"><option value="relevance">Relevância</option><option value="citations">Mais Citados</option><option value="recent">Mais Recentes</option></select></div></div><div id="articlesList" class="divide-y"></div><div id="pagination" class="p-4 text-center border-t"><button id="loadMoreButton" class="bg-white border border-gray-300 font-semibold py-2 px-6 rounded-lg hover:bg-gray-50 disabled:bg-gray-200">Carregar Mais</button></div></div>
-        </div>
-        <div id="manageScreen" class="screen hidden-screen w-full max-w-6xl mx-auto">
-            <div class="bg-white rounded-2xl shadow-lg border"><div class="p-4 sm:p-6 border-b flex justify-between items-center gap-4 flex-wrap"><div class="flex items-center gap-4"><button id="backToHomeFromManageButton" class="p-2 rounded-full hover:bg-gray-100"><span class="material-icons">arrow_back</span></button><div><h2 class="text-2xl font-bold">Gerenciar Fichamentos</h2><p class="text-gray-500">Organize seus artigos salvos.</p></div></div><div class="flex gap-4"><button id="addByLinkCard" class="bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-50 flex items-center"><span class="material-icons mr-2">link</span>Adicionar por Link</button><button id="buildFrameworkButton" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed"><span class="material-icons mr-2">build</span>Construir Referencial</button></div></div><div class="p-4 flex flex-col sm:flex-row items-center gap-4 border-b bg-gray-50"><span class="font-medium text-sm">Filtrar por:</span><select id="filterStatus" class="filter-select rounded-lg border-gray-300 text-sm"><option value="all">Status (Todos)</option><option value="read">Lido</option><option value="unread">Não Lido</option></select><select id="filterYear" class="filter-select rounded-lg border-gray-300 text-sm"><option value="all">Ano (Todos)</option></select><select id="filterTopic" class="filter-select rounded-lg border-gray-300 text-sm"><option value="all">Tópico (Todos)</option></select></div><div class="overflow-x-auto"><table class="w-full text-sm text-left"><thead class="text-xs uppercase bg-gray-50"><tr><th class="px-6 py-3 whitespace-nowrap">Status</th><th class="px-6 py-3">Título</th><th class="px-6 py-3">Tópico</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="manageTableBody"></tbody></table></div></div>
-        </div>
-        <div id="frameworkScreen" class="screen hidden-screen w-full max-w-4xl mx-auto">
-             <div class="bg-white rounded-2xl shadow-lg border border-gray-100"><div class="p-4 sm:p-6 border-b flex justify-between items-center gap-4"><div class="flex items-center gap-4"><button id="backToManageButton" class="p-2 rounded-full hover:bg-gray-100 text-gray-500"><span class="material-icons">arrow_back</span></button><div><h2 class="text-2xl font-bold text-gray-800">Referencial Teórico</h2><p class="text-gray-500">Artigos agrupados por objetivo específico.</p></div></div><button id="copyFrameworkButton" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center"><span class="material-icons mr-2">content_copy</span>Copiar Tudo</button></div><div id="frameworkContent" class="p-4 sm:p-6"></div></div>
-        </div>
-
-        <!-- Modals -->
-        <div id="searchModal" class="modal-container fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 invisible"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">Configurar Nova Busca</h2><button data-modal-target="search" class="close-modal text-gray-400"><span class="material-icons">close</span></button></div><div><div class="mb-6"><label class="block text-md font-medium mb-2">Tipo de Operação</label><div class="grid grid-cols-1 md:grid-cols-3 gap-2 rounded-lg bg-gray-100 p-1"><label><input type="radio" name="operationType" value="ia" class="hidden peer" checked><div class="peer-checked:bg-white peer-checked:shadow text-center p-2 rounded-md cursor-pointer">Busca IA</div></label><label><input type="radio" name="operationType" value="direct" class="hidden peer"><div class="peer-checked:bg-white peer-checked:shadow text-center p-2 rounded-md cursor-pointer">Busca Direta</div></label><label><input type="radio" name="operationType" value="import" class="hidden peer"><div class="peer-checked:bg-white peer-checked:shadow text-center p-2 rounded-md cursor-pointer">Importar Ficheiro</div></label></div></div><div id="search-inputs-container"><div class="mb-6"><textarea id="mainSearchInput" rows="3" class="w-full p-3 border rounded-lg"></textarea></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"><div><label class="block text-sm font-medium mb-1">Ano a partir de</label><input type="number" id="minYear" class="w-full p-3 border rounded-lg" value="2020"></div><div><label class="block text-sm font-medium mb-1">Mínimo de citações</label><input type="number" id="minCitations" class="w-full p-3 border rounded-lg" value="10"></div></div></div><div id="import-inputs-container" class="hidden"><div class="mb-6"><label for="bibFileInput" class="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center cursor-pointer"><span class="material-icons mr-2">file_upload</span>Selecionar Ficheiro .bib</label><input type="file" id="bibFileInput" class="hidden" accept=".bib"><p id="fileNameDisplay" class="text-sm text-center text-gray-500 mt-2"></p></div></div><button id="mainActionButton" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg flex items-center justify-center text-lg"><span class="material-icons mr-2">search</span>Buscar Artigos</button></div></div></div>
+        
         <div id="addByLinkModal" class="modal-container fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 invisible"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-8"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">Adicionar Artigo por Link</h2><button data-modal-target="addByLink" class="close-modal text-gray-400"><span class="material-icons">close</span></button></div><div><div class="mb-6"><label for="urlInput" class="block text-md font-medium mb-2">URL do Artigo (ResearchGate)</label><textarea id="urlInput" rows="3" class="w-full p-3 border rounded-lg" placeholder="Cole aqui o link do artigo do ResearchGate..."></textarea></div><button id="addByLinkActionButton" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg flex items-center justify-center text-lg"><span class="material-icons mr-2">add_circle</span>Adicionar Artigo</button></div></div></div>
         
         <div id="summaryModal" class="modal-container fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 invisible"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">Resumo Analítico (IA)</h3><button data-modal-target="summary" class="close-modal text-gray-400"><span class="material-icons">close</span></button></div><div id="summaryModalContent" class="prose"></div></div></div>
@@ -59,26 +20,32 @@
         const API_URL = window.location.hostname.includes('onrender.com') ? window.location.origin : 'http://127.0.0.1:5000';
         
         let currentArticles = [], savedArticles = [], displayedCount = 0, rowToDelete = null, articleToEdit = null;
-        const articlesPerPage = 5;
+        const articlesPerPage = 8;
         let currentSearchTerm = '';
         let selectedArticleIds = new Set();
+        let availableSources = {};
+        let selectedSources = ['semantic_scholar', 'crossref', 'doaj', 'arxiv', 'openalex', 'pubmed'];
         
         const dom = {
             screens: { dashboard: document.getElementById('dashboardScreen'), loading: document.getElementById('loadingScreen'), results: document.getElementById('resultsScreen'), manage: document.getElementById('manageScreen'), framework: document.getElementById('frameworkScreen') },
             modals: { search: document.getElementById('searchModal'), summary: document.getElementById('summaryModal'), confirmDelete: document.getElementById('confirmDeleteModal'), details: document.getElementById('detailsModal'), addByLink: document.getElementById('addByLinkModal') },
-            newSearchCard: document.getElementById('newSearchCard'), manageCard: document.getElementById('manageCard'), closeModalButtons: document.querySelectorAll('.close-modal'), startSearchButton: document.getElementById('startSearchButton'), backToHomeButton: document.getElementById('backToHomeButton'), backToHomeFromManageButton: document.getElementById('backToHomeFromManageButton'), backToManageButton: document.getElementById('backToManageButton'),
+            newSearchCard: document.getElementById('newSearchCard'), manageCard: document.getElementById('manageCard'), closeModalButtons: document.querySelectorAll('.close-modal'), backToHomeButton: document.getElementById('backToHomeButton'), backToHomeFromManageButton: document.getElementById('backToHomeFromManageButton'), backToManageButton: document.getElementById('backToManageButton'),
             manageTableBody: document.getElementById('manageTableBody'), summaryModalContent: document.getElementById('summaryModalContent'), detailsModalContent: document.getElementById('detailsModalContent'), cancelDeleteButton: document.getElementById('cancelDeleteButton'), confirmDeleteButton: document.getElementById('confirmDeleteButton'), saveDetailsButton: document.getElementById('saveDetailsButton'),
             filterStatus: document.getElementById('filterStatus'), filterYear: document.getElementById('filterYear'), filterTopic: document.getElementById('filterTopic'),
-            articlesList: document.getElementById('articlesList'), selectAllCheckbox: document.getElementById('selectAllCheckbox'), generateButton: document.getElementById('generateButton'), sortOrder: document.getElementById('sortOrder'), loadMoreButton: document.getElementById('loadMoreButton'), resultsCounter: document.getElementById('resultsCounter'), mainSearchInput: document.getElementById('mainSearchInput'), searchTypeRadios: document.querySelectorAll('input[name="searchType"]'),
+            articlesList: document.getElementById('articlesList'), selectAllCheckbox: document.getElementById('selectAllCheckbox'), generateButton: document.getElementById('generateButton'), sortOrder: document.getElementById('sortOrder'), loadMoreButton: document.getElementById('loadMoreButton'), resultsCounter: document.getElementById('resultsCounter'), mainSearchInput: document.getElementById('mainSearchInput'),
             buildFrameworkButton: document.getElementById('buildFrameworkButton'), frameworkContent: document.getElementById('frameworkContent'), copyFrameworkButton: document.getElementById('copyFrameworkButton'),
             addByLinkCard: document.getElementById('addByLinkCard'), addByLinkActionButton: document.getElementById('addByLinkActionButton'), urlInput: document.getElementById('urlInput'),
-            searchQueryDisplay: document.getElementById('searchQueryDisplay'),
+            searchQueryDisplay: document.getElementById('searchQueryDisplay'), sourceStats: document.getElementById('sourceStats'), loadingStatus: document.getElementById('loadingStatus'),
             operationTypeRadios: document.querySelectorAll('input[name="operationType"]'),
             mainActionButton: document.getElementById('mainActionButton'),
             searchInputContainer: document.getElementById('search-inputs-container'),
             importInputsContainer: document.getElementById('import-inputs-container'),
             bibFileInput: document.getElementById('bibFileInput'),
-            fileNameDisplay: document.getElementById('fileNameDisplay')
+            fileNameDisplay: document.getElementById('fileNameDisplay'),
+            sourcesList: document.getElementById('sourcesList'),
+            selectAllSources: document.getElementById('selectAllSources'),
+            selectDefaultSources: document.getElementById('selectDefaultSources'),
+            selectFreeSources: document.getElementById('selectFreeSources')
         };
         
         const showScreen = name => { Object.values(dom.screens).forEach(s => s.classList.add('hidden-screen')); dom.screens[name].classList.remove('hidden-screen');};
@@ -88,7 +55,10 @@
         async function apiCall(endpoint, method = 'GET', body = null) {
             try {
                 console.log(`[API] Chamando ${method} ${endpoint}`);
-                dom.screens.loading.classList.remove('hidden-screen');
+                if (endpoint !== '/health') {
+                    dom.screens.loading.classList.remove('hidden-screen');
+                    updateLoadingStatus('Conectando ao servidor...');
+                }
                 
                 const options = { method };
                 if (body instanceof FormData) { 
@@ -114,7 +84,6 @@
             } catch (error) {
                 console.error(`[API] Falha na chamada para ${endpoint}:`, error);
                 
-                // Mensagens de erro mais específicas
                 let errorMessage = 'Erro de comunicação com o servidor.';
                 if (error.message.includes('Failed to fetch')) {
                     errorMessage = 'Não foi possível conectar ao servidor. Verifique se o backend está funcionando.';
@@ -128,8 +97,97 @@
                 showScreen('dashboard');
                 return null;
             } finally {
-                dom.screens.loading.classList.add('hidden-screen');
+                if (endpoint !== '/health') {
+                    dom.screens.loading.classList.add('hidden-screen');
+                }
             }
+        }
+        
+        function updateLoadingStatus(message) {
+            if (dom.loadingStatus) {
+                dom.loadingStatus.textContent = message;
+            }
+        }
+        
+        async function loadAvailableSources() {
+            try {
+                updateLoadingStatus('Carregando fontes disponíveis...');
+                const sources = await apiCall('/api/sources');
+                if (sources) {
+                    availableSources = sources;
+                    renderSourcesSelection();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar fontes:', error);
+            }
+        }
+        
+        function renderSourcesSelection() {
+            dom.sourcesList.innerHTML = '';
+            
+            Object.entries(availableSources).forEach(([key, source]) => {
+                const isSelected = selectedSources.includes(key);
+                const needsKey = source.status === 'needs_key';
+                const isActive = source.status === 'active';
+                
+                let statusClass = 'source-inactive';
+                let statusIcon = 'radio_button_unchecked';
+                let statusText = 'Inativa';
+                
+                if (isActive) {
+                    statusClass = 'source-active';
+                    statusIcon = 'check_circle';
+                    statusText = 'Ativa';
+                } else if (needsKey) {
+                    statusClass = 'source-needs-key';
+                    statusIcon = 'key';
+                    statusText = 'Precisa de chave';
+                }
+                
+                const sourceElement = document.createElement('div');
+                sourceElement.className = `source-item p-3 border-2 rounded-lg cursor-pointer ${statusClass}`;
+                sourceElement.dataset.source = key;
+                
+                sourceElement.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" ${isSelected ? 'checked' : ''} ${!isActive ? 'disabled' : ''} 
+                                   class="h-4 w-4 text-blue-600 rounded" data-source="${key}">
+                            <div>
+                                <div class="font-semibold text-sm">${source.name}</div>
+                                <div class="text-xs text-gray-600">${source.description}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 text-xs">
+                            <span class="material-icons text-sm">${statusIcon}</span>
+                            <span>${statusText}</span>
+                        </div>
+                    </div>
+                `;
+                
+                // Event listener para checkbox
+                const checkbox = sourceElement.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        if (!selectedSources.includes(key)) {
+                            selectedSources.push(key);
+                        }
+                    } else {
+                        selectedSources = selectedSources.filter(s => s !== key);
+                    }
+                    updateSourcesDisplay();
+                });
+                
+                dom.sourcesList.appendChild(sourceElement);
+            });
+            
+            updateSourcesDisplay();
+        }
+        
+        function updateSourcesDisplay() {
+            // Atualiza contadores
+            const activeCount = selectedSources.filter(s => availableSources[s]?.status === 'active').length;
+            console.log(`Fontes selecionadas: ${activeCount}/${Object.keys(availableSources).length}`);
         }
         
         const sortArticles = () => { 
@@ -138,14 +196,7 @@
                 if (sortBy === 'recent') return (b.year || 0) - (a.year || 0); 
                 if (sortBy === 'citations') return (b.citations || 0) - (a.citations || 0); 
                 if (sortBy === 'relevance') { 
-                    const currentYear = new Date().getFullYear(); 
-                    const getRecencyFactor = (year) => { 
-                        const age = currentYear - (year || currentYear); 
-                        if (age <= 1) return 1.5; 
-                        if (age <= 3) return 1.2; 
-                        return 1; 
-                    }; 
-                    return ((b.citations || 0) * getRecencyFactor(b.year)) - ((a.citations || 0) * getRecencyFactor(a.year)); 
+                    return (b.relevance_score || 0) - (a.relevance_score || 0);
                 } 
                 return 0; 
             }); 
@@ -155,20 +206,55 @@
             sortArticles(); 
             dom.articlesList.innerHTML = ''; 
             const articlesToRender = currentArticles.slice(0, displayedCount); 
+            
             articlesToRender.forEach(article => { 
                 const articleElement = document.createElement('div'); 
-                articleElement.className = 'p-4 sm:p-6 flex items-start gap-4'; 
+                articleElement.className = 'p-4 sm:p-6 flex items-start gap-4 hover:bg-gray-50'; 
                 const isChecked = selectedArticleIds.has(article.id) ? 'checked' : ''; 
-                articleElement.innerHTML = `<div class="flex-shrink-0 mt-1"><input type="checkbox" data-id="${article.id}" class="article-checkbox h-5 w-5 rounded border-gray-300 text-blue-600" ${isChecked}></div><div class="flex-grow"><p class="text-lg font-semibold text-gray-800">${article.title}</p><p class="text-sm text-gray-500 mt-1">${(article.authors || []).join(', ')}</p><div class="flex items-center gap-4 text-sm text-gray-600 mt-2"><span><strong>Ano:</strong> ${article.year || 'N/A'}</span><span class="text-gray-300">|</span><span><strong>Fonte:</strong> ${article.source}</span><span class="text-gray-300">|</span><span><strong>Citações:</strong> ${article.citations || 0}</span></div></div><div class="flex-shrink-0 ml-4"><a href="${article.url}" target="_blank" class="p-2 rounded-full hover:bg-gray-100" title="Ver artigo original"><span class="material-icons">open_in_new</span></a></div>`; 
+                
+                // Extrai nome da fonte principal
+                const sourceDisplay = article.source ? article.source.split('(')[0].trim() : 'N/A';
+                const venueDisplay = article.venue && article.venue !== 'N/A' ? article.venue : '';
+                
+                articleElement.innerHTML = `
+                    <div class="flex-shrink-0 mt-1">
+                        <input type="checkbox" data-id="${article.id}" class="article-checkbox h-5 w-5 rounded border-gray-300 text-blue-600" ${isChecked}>
+                    </div>
+                    <div class="flex-grow">
+                        <div class="flex items-start justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800 leading-tight">${article.title}</h3>
+                            <span class="ml-4 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full flex-shrink-0">${sourceDisplay}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">${(article.authors || []).join(', ')}</p>
+                        ${venueDisplay ? `<p class="text-sm text-gray-500 mt-1 italic">${venueDisplay}</p>` : ''}
+                        <div class="flex items-center gap-4 text-sm text-gray-600 mt-2">
+                            <span><strong>Ano:</strong> ${article.year || 'N/A'}</span>
+                            <span class="text-gray-300">•</span>
+                            <span><strong>Citações:</strong> ${article.citations || 0}</span>
+                            ${article.relevance_score ? `<span class="text-gray-300">•</span><span><strong>Relevância:</strong> ${article.relevance_score.toFixed(1)}</span>` : ''}
+                        </div>
+                        ${article.abstract && article.abstract !== 'Resumo não disponível' ? 
+                            `<p class="text-sm text-gray-700 mt-2 line-clamp-2">${article.abstract.substring(0, 200)}${article.abstract.length > 200 ? '...' : ''}</p>` : 
+                            ''
+                        }
+                    </div>
+                    <div class="flex-shrink-0 ml-4">
+                        <a href="${article.url}" target="_blank" class="p-2 rounded-full hover:bg-gray-100 text-gray-600" title="Ver artigo original">
+                            <span class="material-icons">open_in_new</span>
+                        </a>
+                    </div>
+                `; 
+                
                 dom.articlesList.appendChild(articleElement); 
             }); 
+            
             document.querySelectorAll('.article-checkbox').forEach(cb => cb.addEventListener('change', updateSelectionState)); 
             updateCounter(); 
             updateSelectionState(); 
         };
         
         const updateCounter = () => { 
-            dom.resultsCounter.textContent = `Mostrando ${Math.min(displayedCount, currentArticles.length)} de ${currentArticles.length} artigos.`; 
+            dom.resultsCounter.textContent = `${Math.min(displayedCount, currentArticles.length)} de ${currentArticles.length} artigos`; 
             dom.loadMoreButton.disabled = displayedCount >= currentArticles.length; 
         };
         
@@ -208,18 +294,42 @@
         const handleStartSearch = async () => { 
             closeModal('search'); 
             currentSearchTerm = dom.mainSearchInput.value; 
+            
+            // Filtra apenas fontes ativas
+            const activeSources = selectedSources.filter(s => availableSources[s]?.status === 'active');
+            
+            if (activeSources.length === 0) {
+                alert('Selecione pelo menos uma fonte ativa para busca.');
+                return;
+            }
+            
             const payload = { 
                 searchType: document.querySelector('input[name="operationType"]:checked').value === 'ia' ? 'ia' : 'direct', 
                 queryText: currentSearchTerm, 
-                minYear: document.getElementById('minYear').value, 
-                minCitations: document.getElementById('minCitations').value 
+                minYear: parseInt(document.getElementById('minYear').value),
+                minCitations: parseInt(document.getElementById('minCitations').value),
+                sources: activeSources
             }; 
+            
             selectedArticleIds.clear(); 
-            const articles = await apiCall('/api/search', 'POST', payload); 
-            if (articles) { 
-                currentArticles = articles; 
+            updateLoadingStatus('Executando buscas nas bases selecionadas...');
+            
+            const result = await apiCall('/api/search', 'POST', payload); 
+            if (result) { 
+                currentArticles = result.articles || result; // Compatibilidade
                 displayedCount = articlesPerPage; 
-                dom.searchQueryDisplay.textContent = `Busca por: "${currentSearchTerm}"`; 
+                dom.searchQueryDisplay.textContent = `Busca: "${currentSearchTerm}"`; 
+                
+                // Atualiza estatísticas
+                if (result.source_stats) {
+                    const statsText = Object.entries(result.source_stats)
+                        .map(([source, count]) => `${source}: ${count}`)
+                        .join(' • ');
+                    dom.sourceStats.textContent = statsText;
+                } else {
+                    dom.sourceStats.textContent = `${activeSources.length} fontes consultadas`;
+                }
+                
                 renderSearchResults(); 
                 showScreen('results'); 
             } 
@@ -234,6 +344,9 @@
             const articlesToGenerate = currentArticles.filter(a => selectedArticleIds.has(a.id)); 
             dom.generateButton.disabled = true; 
             dom.generateButton.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>`; 
+            
+            updateLoadingStatus('Gerando fichamentos e resumos analíticos...');
+            
             const result = await apiCall('/api/generate', 'POST', { articles: articlesToGenerate }); 
             if (result) { 
                 alert(result.message); 
@@ -246,6 +359,7 @@
             updateSelectionState(); 
         };
         
+        // Resto das funções permanecem iguais...
         const populateFilters = () => { 
             const years = [...new Set(savedArticles.map(a => a.year))].sort((a,b) => b-a); 
             const topics = [...new Set(savedArticles.map(a => a.topic))]; 
@@ -269,9 +383,37 @@
             ); 
             filteredArticles.forEach(article => { 
                 const row = document.createElement('tr'); 
-                row.className = `bg-white border-b ${article.read ? 'read-row' : ''}`; 
+                row.className = `bg-white border-b hover:bg-gray-50 ${article.read ? 'read-row' : ''}`; 
                 row.dataset.id = article.id; 
-                row.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${article.read ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${article.read ? 'Lido' : 'Não Lido'}</span></td><td class="px-6 py-4 font-medium text-gray-900">${article.title}</td><td class="px-6 py-4">${article.topic}</td><td class="px-6 py-4 text-center"><div class="flex justify-center items-center gap-1"><button class="toggle-read p-2" title="Marcar"><span class="material-icons">visibility</span></button><button class="view-summary p-2" title="Ver resumo"><span class="material-icons">info</span></button><button class="view-details p-2" title="Ver detalhes"><span class="material-icons">article</span></button><button class="delete-row p-2" title="Excluir"><span class="material-icons">delete_outline</span></button></div></td>`; 
+                
+                const sourceDisplay = article.source ? article.source.split('(')[0].trim() : 'N/A';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${article.read ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${article.read ? 'Lido' : 'Não Lido'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 font-medium text-gray-900">${article.title}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${sourceDisplay}</td>
+                    <td class="px-6 py-4 text-sm">${article.topic}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center gap-1">
+                            <button class="toggle-read p-2 hover:bg-gray-100 rounded" title="Marcar como lido/não lido">
+                                <span class="material-icons text-gray-600">${article.read ? 'visibility_off' : 'visibility'}</span>
+                            </button>
+                            <button class="view-summary p-2 hover:bg-gray-100 rounded" title="Ver resumo analítico">
+                                <span class="material-icons text-gray-600">info</span>
+                            </button>
+                            <button class="view-details p-2 hover:bg-gray-100 rounded" title="Ver detalhes e anotações">
+                                <span class="material-icons text-gray-600">article</span>
+                            </button>
+                            <button class="delete-row p-2 hover:bg-gray-100 rounded" title="Excluir artigo">
+                                <span class="material-icons text-red-600">delete_outline</span>
+                            </button>
+                        </div>
+                    </td>
+                `; 
                 dom.manageTableBody.appendChild(row); 
             }); 
         };
@@ -288,10 +430,31 @@
                 renderManageTable(); 
                 apiCall('/api/manage/update', 'POST', { articles: savedArticles }); 
             } else if (button.classList.contains('view-summary')) { 
-                dom.summaryModalContent.textContent = articleToEdit.summary; 
+                dom.summaryModalContent.innerHTML = `<div class="prose max-w-none">${articleToEdit.summary || 'Resumo não disponível.'}</div>`; 
                 openModal('summary'); 
             } else if (button.classList.contains('view-details')) { 
-                dom.detailsModalContent.innerHTML = `<ul><li><strong>Autores:</strong> <span>${(articleToEdit.authors||[]).join(', ')}</span></li><li><strong>Ano:</strong> <span>${articleToEdit.year}</span></li><li><strong>Citações:</strong> <span>${articleToEdit.citations}</span></li><li><strong>Data de Seleção:</strong> <span>${articleToEdit.selectionDate}</span></li><li><strong>Data de Leitura:</strong> <span>${articleToEdit.readDate || 'Não lido'}</span></li><li><strong>Link:</strong> <a href="${articleToEdit.url}" target="_blank" class="text-blue-600">Ver original</a></li></ul><hr class="my-4"><div><label class="block font-medium mb-2">Objetivo Específico</label><textarea id="specificObjective" rows="3" class="w-full p-2 border rounded-lg">${articleToEdit.specificObjective || ''}</textarea></div>`; 
+                const sourceDisplay = articleToEdit.source ? articleToEdit.source.split('(')[0].trim() : 'N/A';
+                dom.detailsModalContent.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div><strong>Autores:</strong> ${(articleToEdit.authors||[]).join(', ')}</div>
+                            <div><strong>Ano:</strong> ${articleToEdit.year}</div>
+                            <div><strong>Citações:</strong> ${articleToEdit.citations}</div>
+                            <div><strong>Fonte:</strong> ${sourceDisplay}</div>
+                            <div><strong>Data de Seleção:</strong> ${articleToEdit.selectionDate}</div>
+                            <div><strong>Data de Leitura:</strong> ${articleToEdit.readDate || 'Não lido'}</div>
+                        </div>
+                        <div>
+                            <strong>Link:</strong> <a href="${articleToEdit.url}" target="_blank" class="text-blue-600 hover:text-blue-800">Ver original</a>
+                        </div>
+                        <hr>
+                        <div>
+                            <label class="block font-medium mb-2">Objetivo Específico para o Referencial</label>
+                            <textarea id="specificObjective" rows="3" class="w-full p-3 border rounded-lg" placeholder="Ex: Desafios na adoção de UX em PMEs">${articleToEdit.specificObjective || ''}</textarea>
+                            <p class="text-xs text-gray-500 mt-1">Este campo será usado para agrupar o artigo no referencial teórico.</p>
+                        </div>
+                    </div>
+                `; 
                 openModal('details'); 
             } else if (button.classList.contains('delete-row')) { 
                 rowToDelete = row; 
@@ -300,7 +463,9 @@
         };
         
         const saveDetails = async () => { 
-            if(articleToEdit) articleToEdit.specificObjective = document.getElementById('specificObjective').value; 
+            if(articleToEdit) {
+                articleToEdit.specificObjective = document.getElementById('specificObjective').value;
+            }
             await apiCall('/api/manage/update', 'POST', { articles: savedArticles }); 
             closeModal('details'); 
             renderManageTable(); 
@@ -316,7 +481,7 @@
         };
         
         const loadManageScreen = async () => { 
-            showScreen('loading'); 
+            updateLoadingStatus('Carregando fichamentos salvos...');
             const data = await apiCall('/api/manage/load'); 
             if (data !== null) { 
                 savedArticles = data; 
@@ -326,18 +491,32 @@
         };
         
         const handleBuildFramework = async () => { 
-            showScreen('loading'); 
+            updateLoadingStatus('Construindo referencial teórico...');
             const data = await apiCall('/api/build-framework'); 
             if (data) { 
                 dom.frameworkContent.innerHTML = ''; 
                 if (Object.keys(data).length === 0) { 
-                    dom.frameworkContent.innerHTML = '<p class="text-gray-500">Nenhum artigo lido com objetivo específico encontrado. Marque alguns artigos como "Lido" e adicione um objetivo para começar.</p>'; 
+                    dom.frameworkContent.innerHTML = '<div class="text-center py-8"><span class="material-icons text-gray-400 text-6xl mb-4">library_books</span><p class="text-gray-500 text-lg">Nenhum artigo lido com objetivo específico encontrado.</p><p class="text-gray-400 text-sm mt-2">Marque alguns artigos como "Lido" e adicione um objetivo específico para começar.</p></div>'; 
                 } else { 
                     for (const objective in data) { 
                         const section = document.createElement('div'); 
                         section.className = 'mb-8'; 
-                        let referencesHTML = data[objective].map(ref => `<li class="text-gray-700 leading-relaxed p-2 bg-gray-50 rounded-md flex justify-between items-center"><span>${ref}</span><button class="copy-ref p-1 text-gray-400 hover:text-blue-600" title="Copiar referência"><span class="material-icons text-base">content_copy</span></button></li>`).join(''); 
-                        section.innerHTML = `<details class="bg-white p-4 rounded-lg shadow-sm" open><summary class="font-semibold text-lg cursor-pointer">${objective}</summary><ul class="space-y-3 mt-4">${referencesHTML}</ul></details>`; 
+                        let referencesHTML = data[objective].map((ref, index) => `
+                            <li class="text-gray-700 leading-relaxed p-3 bg-gray-50 rounded-md border border-gray-200 flex justify-between items-center">
+                                <span class="flex-grow pr-4">${ref}</span>
+                                <button class="copy-ref p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Copiar referência">
+                                    <span class="material-icons text-base">content_copy</span>
+                                </button>
+                            </li>
+                        `).join(''); 
+                        section.innerHTML = `
+                            <details class="bg-white p-6 rounded-lg shadow-sm border border-gray-200" open>
+                                <summary class="font-semibold text-lg cursor-pointer text-gray-800 hover:text-blue-600 transition-colors">
+                                    ${objective} (${data[objective].length} artigo${data[objective].length > 1 ? 's' : ''})
+                                </summary>
+                                <ul class="space-y-3 mt-4">${referencesHTML}</ul>
+                            </details>
+                        `; 
                         dom.frameworkContent.appendChild(section); 
                     } 
                 } 
@@ -349,14 +528,29 @@
             const copyButton = e.target.closest('.copy-ref'); 
             if (copyButton) { 
                 const textToCopy = copyButton.parentElement.querySelector('span').innerText; 
-                navigator.clipboard.writeText(textToCopy).then(() => alert('Referência copiada!'), () => alert('Falha ao copiar.')); 
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    // Feedback visual
+                    const icon = copyButton.querySelector('.material-icons');
+                    const originalText = icon.textContent;
+                    icon.textContent = 'check';
+                    copyButton.classList.add('text-green-600');
+                    setTimeout(() => {
+                        icon.textContent = originalText;
+                        copyButton.classList.remove('text-green-600');
+                    }, 2000);
+                }, () => alert('Falha ao copiar.')); 
             } else if (e.target.tagName !== 'SUMMARY') { 
                 e.preventDefault(); 
             } 
         };
         
         const updatePlaceholder = () => { 
-            dom.mainSearchInput.placeholder = document.querySelector('input[name="operationType"]:checked').value === 'ia' ? "Digite sua pergunta de pesquisa ou objetivo..." : "Digite os termos de busca (ex: 'user experience' AND 'SME')..."; 
+            const operationType = document.querySelector('input[name="operationType"]:checked').value;
+            if (operationType === 'ia') {
+                dom.mainSearchInput.placeholder = "Ex: Como pequenas empresas implementam design thinking em seus processos?";
+            } else {
+                dom.mainSearchInput.placeholder = "Ex: 'user experience' AND 'small business' OR 'design thinking' AND SME";
+            }
         };
         
         const handleAddByLink = async () => { 
@@ -366,6 +560,7 @@
                 return; 
             } 
             closeModal('addByLink'); 
+            updateLoadingStatus('Extraindo metadados do artigo...');
             const result = await apiCall('/api/add-by-url', 'POST', { url }); 
             if (result) { 
                 alert(result.message); 
@@ -382,10 +577,12 @@
             if (selectedValue === 'import') {
                 dom.searchInputContainer.classList.add('hidden');
                 dom.importInputsContainer.classList.remove('hidden');
+                document.getElementById('source-selection').classList.add('hidden');
                 dom.mainActionButton.innerHTML = `<span class="material-icons mr-2">publish</span>Processar Ficheiro`;
             } else {
                 dom.searchInputContainer.classList.remove('hidden');
                 dom.importInputsContainer.classList.add('hidden');
+                document.getElementById('source-selection').classList.remove('hidden');
                 dom.mainActionButton.innerHTML = `<span class="material-icons mr-2">search</span>Buscar Artigos`;
                 updatePlaceholder();
             }
@@ -394,7 +591,7 @@
         const handleBibFileSelect = (event) => {
             const file = event.target.files[0];
             if (file) {
-                dom.fileNameDisplay.textContent = file.name;
+                dom.fileNameDisplay.textContent = `Arquivo selecionado: ${file.name}`;
                 dom.mainActionButton.disabled = false;
             }
         };
@@ -410,11 +607,13 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 closeModal('search');
+                updateLoadingStatus('Processando arquivo BibTeX...');
                 const articles = await apiCall('/api/import-bib', 'POST', formData);
                 if (articles) {
                     currentArticles = articles;
                     displayedCount = articlesPerPage;
                     dom.searchQueryDisplay.textContent = `Artigos importados de ${file.name}`;
+                    dom.sourceStats.textContent = `${articles.length} artigos importados`;
                     renderSearchResults();
                     showScreen('results');
                 }
@@ -423,8 +622,30 @@
             }
         };
 
+        // Source selection handlers
+        const handleSelectAllSources = () => {
+            selectedSources = Object.keys(availableSources).filter(key => 
+                availableSources[key].status === 'active'
+            );
+            renderSourcesSelection();
+        };
+
+        const handleSelectDefaultSources = () => {
+            selectedSources = ['semantic_scholar', 'crossref', 'doaj', 'arxiv', 'openalex', 'pubmed'];
+            renderSourcesSelection();
+        };
+
+        const handleSelectFreeSources = () => {
+            selectedSources = Object.keys(availableSources).filter(key => 
+                availableSources[key].status === 'active' && !availableSources[key].requires_key
+            );
+            renderSourcesSelection();
+        };
+
         // EVENT LISTENERS
-        dom.newSearchCard.addEventListener('click', () => openModal('search'));
+        dom.newSearchCard.addEventListener('click', () => {
+            loadAvailableSources().then(() => openModal('search'));
+        });
         dom.manageCard.addEventListener('click', loadManageScreen);
         dom.buildFrameworkButton.addEventListener('click', handleBuildFramework); 
         dom.backToManageButton.addEventListener('click', () => showScreen('manage')); 
@@ -446,16 +667,175 @@
         dom.copyFrameworkButton.addEventListener('click', (e) => { 
             e.stopPropagation(); 
             const text = dom.frameworkContent.innerText; 
-            navigator.clipboard.writeText(text).then(() => alert('Referencial copiado!'), () => alert('Falha ao copiar.')); 
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = dom.copyFrameworkButton.innerHTML;
+                dom.copyFrameworkButton.innerHTML = '<span class="material-icons mr-2">check</span>Copiado!';
+                setTimeout(() => {
+                    dom.copyFrameworkButton.innerHTML = originalText;
+                }, 2000);
+            }, () => alert('Falha ao copiar.')); 
         });
         dom.frameworkContent.addEventListener('click', handleFrameworkClick);
         dom.addByLinkCard.addEventListener('click', () => openModal('addByLink'));
         dom.addByLinkActionButton.addEventListener('click', handleAddByLink);
         
+        // Source selection event listeners
+        dom.selectAllSources.addEventListener('click', handleSelectAllSources);
+        dom.selectDefaultSources.addEventListener('click', handleSelectDefaultSources);
+        dom.selectFreeSources.addEventListener('click', handleSelectFreeSources);
+        
         // INICIALIZAÇÃO
         console.log(`[INIT] API_URL configurada como: ${API_URL}`);
         showScreen('dashboard');
         updatePlaceholder();
+        
+        // Carrega fontes disponíveis ao inicializar
+        loadAvailableSources();
     </script>
 </body>
-</html>
+</html><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente de Pesquisa Acadêmica - Multi-Fontes</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter e Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .modal-container, .screen { transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; }
+        .hidden-screen { display: none; }
+        .read-row { background-color: #f0fdf4; }
+        .read-row:hover { background-color: #dcfce7; }
+        #detailsModalContent ul, #frameworkContent ul { list-style: none; padding: 0; }
+        #detailsModalContent li, #frameworkContent li { display: flex; flex-direction: column; padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb; }
+        #detailsModalContent li:last-child, #frameworkContent li:last-child { border-bottom: none; }
+        #detailsModalContent li strong, #frameworkContent h3 { color: #374151; margin-bottom: 0.25rem; }
+        .source-item { transition: all 0.2s ease; }
+        .source-item:hover { transform: translateY(-1px); }
+        .source-active { border-color: #3b82f6; background-color: #eff6ff; }
+        .source-inactive { border-color: #d1d5db; background-color: #f9fafb; }
+        .source-needs-key { border-color: #f59e0b; background-color: #fffbeb; }
+    </style>
+</head>
+<body class="text-gray-800">
+    <div id="app" class="p-4 sm:p-8 min-h-screen">
+        <!-- Telas -->
+        <div id="dashboardScreen" class="screen w-full max-w-2xl mx-auto text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-700 mb-2">Agente de Pesquisa Acadêmica</h1>
+            <p class="text-gray-500 mb-4">Seu assistente para a construção do referencial teórico.</p>
+            <p class="text-sm text-blue-600 mb-12">✨ Agora com múltiplas fontes acadêmicas integradas!</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div id="newSearchCard" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer border"><span class="material-icons text-5xl text-blue-500 mb-4">search</span><h2 class="text-xl font-semibold">Nova Busca</h2><p class="text-gray-500 mt-1">Busque em 8+ bases acadêmicas.</p></div>
+                <div id="manageCard" class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer border"><span class="material-icons text-5xl text-purple-500 mb-4">inventory_2</span><h2 class="text-xl font-semibold">Gerenciar Fichamentos</h2><p class="text-gray-500 mt-1">Organize seus artigos.</p></div>
+            </div>
+        </div>
+        
+        <div id="loadingScreen" class="screen hidden-screen w-full text-center py-20">
+            <div class="flex justify-center items-center"><div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div></div>
+            <p class="text-gray-600 mt-4 text-lg">Processando...</p>
+            <p id="loadingStatus" class="text-sm text-gray-500 mt-2">Iniciando busca...</p>
+        </div>
+        
+        <div id="resultsScreen" class="screen hidden-screen w-full max-w-5xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-lg border">
+                <div class="p-4 sm:p-6 border-b flex justify-between items-center gap-4">
+                    <div class="flex items-center gap-4">
+                        <button id="backToHomeButton" class="p-2 rounded-full hover:bg-gray-100"><span class="material-icons">arrow_back</span></button>
+                        <div>
+                            <h2 class="text-2xl font-bold">Resultados da Busca</h2>
+                            <p id="searchQueryDisplay" class="text-sm text-gray-500 mt-1"></p>
+                            <div class="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                                <p id="resultsCounter"></p>
+                                <span class="text-gray-300">|</span>
+                                <p id="sourceStats"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="generateButton" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 flex items-center disabled:bg-gray-400" disabled><span class="material-icons mr-2">description</span>Gerar Fichamento (0)</button>
+                </div>
+                <div class="p-4 flex justify-between items-center border-b bg-gray-50">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="selectAllCheckbox" class="h-5 w-5 rounded border-gray-300 text-blue-600">
+                        <label for="selectAllCheckbox" class="ml-3 text-sm font-medium">Selecionar Todos</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="sortOrder" class="text-sm font-medium">Ordenar por:</label>
+                        <select id="sortOrder" class="rounded-lg border-gray-300 text-sm">
+                            <option value="relevance">Relevância</option>
+                            <option value="citations">Mais Citados</option>
+                            <option value="recent">Mais Recentes</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="articlesList" class="divide-y"></div>
+                <div id="pagination" class="p-4 text-center border-t">
+                    <button id="loadMoreButton" class="bg-white border border-gray-300 font-semibold py-2 px-6 rounded-lg hover:bg-gray-50 disabled:bg-gray-200">Carregar Mais</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="manageScreen" class="screen hidden-screen w-full max-w-6xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-lg border"><div class="p-4 sm:p-6 border-b flex justify-between items-center gap-4 flex-wrap"><div class="flex items-center gap-4"><button id="backToHomeFromManageButton" class="p-2 rounded-full hover:bg-gray-100"><span class="material-icons">arrow_back</span></button><div><h2 class="text-2xl font-bold">Gerenciar Fichamentos</h2><p class="text-gray-500">Organize seus artigos salvos.</p></div></div><div class="flex gap-4"><button id="addByLinkCard" class="bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-50 flex items-center"><span class="material-icons mr-2">link</span>Adicionar por Link</button><button id="buildFrameworkButton" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed"><span class="material-icons mr-2">build</span>Construir Referencial</button></div></div><div class="p-4 flex flex-col sm:flex-row items-center gap-4 border-b bg-gray-50"><span class="font-medium text-sm">Filtrar por:</span><select id="filterStatus" class="filter-select rounded-lg border-gray-300 text-sm"><option value="all">Status (Todos)</option><option value="read">Lido</option><option value="unread">Não Lido</option></select><select id="filterYear" class="filter-select rounded-lg border-gray-300 text-sm"><option value="all">Ano (Todos)</option></select><select id="filterTopic" class="filter-select rounded-lg border-gray-300 text-sm"><option value="all">Tópico (Todos)</option></select></div><div class="overflow-x-auto"><table class="w-full text-sm text-left"><thead class="text-xs uppercase bg-gray-50"><tr><th class="px-6 py-3 whitespace-nowrap">Status</th><th class="px-6 py-3">Título</th><th class="px-6 py-3">Fonte</th><th class="px-6 py-3">Tópico</th><th class="px-6 py-3 text-center">Ações</th></tr></thead><tbody id="manageTableBody"></tbody></table></div></div>
+        </div>
+        
+        <div id="frameworkScreen" class="screen hidden-screen w-full max-w-4xl mx-auto">
+             <div class="bg-white rounded-2xl shadow-lg border border-gray-100"><div class="p-4 sm:p-6 border-b flex justify-between items-center gap-4"><div class="flex items-center gap-4"><button id="backToManageButton" class="p-2 rounded-full hover:bg-gray-100 text-gray-500"><span class="material-icons">arrow_back</span></button><div><h2 class="text-2xl font-bold text-gray-800">Referencial Teórico</h2><p class="text-gray-500">Artigos agrupados por objetivo específico.</p></div></div><button id="copyFrameworkButton" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center"><span class="material-icons mr-2">content_copy</span>Copiar Tudo</button></div><div id="frameworkContent" class="p-4 sm:p-6"></div></div>
+        </div>
+
+        <!-- Modals -->
+        <div id="searchModal" class="modal-container fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 invisible">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-8 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Configurar Nova Busca</h2>
+                    <button data-modal-target="search" class="close-modal text-gray-400"><span class="material-icons">close</span></button>
+                </div>
+                
+                <!-- Tipos de Operação -->
+                <div class="mb-6">
+                    <label class="block text-md font-medium mb-2">Tipo de Operação</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 rounded-lg bg-gray-100 p-1">
+                        <label><input type="radio" name="operationType" value="ia" class="hidden peer" checked><div class="peer-checked:bg-white peer-checked:shadow text-center p-2 rounded-md cursor-pointer">Busca IA</div></label>
+                        <label><input type="radio" name="operationType" value="direct" class="hidden peer"><div class="peer-checked:bg-white peer-checked:shadow text-center p-2 rounded-md cursor-pointer">Busca Direta</div></label>
+                        <label><input type="radio" name="operationType" value="import" class="hidden peer"><div class="peer-checked:bg-white peer-checked:shadow text-center p-2 rounded-md cursor-pointer">Importar Ficheiro</div></label>
+                    </div>
+                </div>
+
+                <!-- Seleção de Fontes -->
+                <div id="source-selection" class="mb-6">
+                    <label class="block text-md font-medium mb-3">Fontes Acadêmicas</label>
+                    <div class="text-sm text-gray-600 mb-3">Selecione as bases de dados para busca:</div>
+                    <div id="sourcesList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Sources will be populated by JavaScript -->
+                    </div>
+                    <div class="mt-3 flex gap-2">
+                        <button id="selectAllSources" class="text-sm text-blue-600 hover:text-blue-800">Selecionar Todas</button>
+                        <span class="text-gray-300">|</span>
+                        <button id="selectDefaultSources" class="text-sm text-blue-600 hover:text-blue-800">Padrão</button>
+                        <span class="text-gray-300">|</span>
+                        <button id="selectFreeSources" class="text-sm text-blue-600 hover:text-blue-800">Apenas Gratuitas</button>
+                    </div>
+                </div>
+                
+                <!-- Campos de Busca -->
+                <div id="search-inputs-container">
+                    <div class="mb-6">
+                        <textarea id="mainSearchInput" rows="3" class="w-full p-3 border rounded-lg" placeholder="Digite sua pergunta de pesquisa..."></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                        <div><label class="block text-sm font-medium mb-1">Ano a partir de</label><input type="number" id="minYear" class="w-full p-3 border rounded-lg" value="2020"></div>
+                        <div><label class="block text-sm font-medium mb-1">Mínimo de citações</label><input type="number" id="minCitations" class="w-full p-3 border rounded-lg" value="5"></div>
+                    </div>
+                </div>
+                
+                <!-- Import Container -->
+                <div id="import-inputs-container" class="hidden">
+                    <div class="mb-6">
+                        <label for="bibFileInput" class="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center cursor-pointer"><span class="material-icons mr-2">file_upload</span>Selecionar Ficheiro .bib</label>
+                        <input type="file" id="bibFileInput" class="hidden" accept=".bib">
+                        <p id="fileNameDisplay"
